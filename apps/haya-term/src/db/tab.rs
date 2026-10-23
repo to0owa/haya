@@ -7,10 +7,11 @@ use gpui_kit::*;
 use haya_db::{CancelToken, Connection, QueryResult};
 
 use super::bridge;
-use crate::{ACCENT, BORDER, TEXT_MUTED, TEXT_PRIMARY};
+use crate::{ACCENT, BORDER, SIDEBAR_HOVER, TEXT_MUTED, TEXT_PRIMARY};
 
 const PAGE_SIZE: u64 = 200;
-const QUERY_ROW_CAP: usize = 1000;
+/// Rows kept in memory for a query result. The SQL itself is never rewritten.
+const ROW_CAP_CHOICES: [usize; 3] = [100, 1000, 10_000];
 const ROW_HEIGHT: f32 = 26.0;
 const HEADER_HEIGHT: f32 = 28.0;
 const GUTTER_WIDTH: f32 = 56.0;
@@ -41,6 +42,47 @@ pub struct DbTab {
     running: bool,
     cancel: Option<CancelToken>,
     selected_row: Option<usize>,
+    row_cap: usize,
+}
+
+/// The statement under the cursor, or the selected text when something is selected.
+///
+/// Statements are split on `;`. A `;` inside a string or comment is not special-cased yet.
+pub fn statement_at(text: &str, cursor: usize, selection: Option<&str>) -> String {
+    if let Some(selected) = selection.map(str::trim).filter(|s| !s.is_empty()) {
+        return selected.to_string();
+    }
+    let cursor = cursor.min(text.len());
+    let cursor = (0..=cursor).rev().find(|&i| text.is_char_boundary(i)).unwrap_or(0);
+    let start = text[..cursor].rfind(';').map_or(0, |i| i + 1);
+    let end = text[cursor..].find(';').map_or(text.len(), |i| cursor + i + 1);
+    let statement = text[start..end].trim();
+    if statement.is_empty() { text.trim().to_string() } else { statement.to_string() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::statement_at;
+
+    #[test]
+    fn picks_the_statement_under_the_cursor() {
+        let text = "SELECT 1;
+SELECT 2;
+SELECT 3";
+        assert_eq!(statement_at(text, 3, None), "SELECT 1;");
+        assert_eq!(statement_at(text, 14, None), "SELECT 2;");
+        assert_eq!(statement_at(text, text.len(), None), "SELECT 3");
+    }
+
+    #[test]
+    fn selection_wins_over_cursor() {
+        assert_eq!(statement_at("SELECT 1; SELECT 2;", 0, Some("  SELECT 2  ")), "SELECT 2");
+    }
+
+    #[test]
+    fn empty_cursor_statement_falls_back_to_whole_text() {
+        assert_eq!(statement_at("  ;  ", 2, None), ";");
+    }
 }
 
 impl DbTab {
@@ -62,6 +104,7 @@ impl DbTab {
             running: true,
             cancel: None,
             selected_row: None,
+            row_cap: ROW_CAP_CHOICES[1],
         });
         tab.update(cx, |_, cx| {
             bridge::run(
@@ -104,6 +147,7 @@ impl DbTab {
             running: false,
             cancel: None,
             selected_row: None,
+            row_cap: ROW_CAP_CHOICES[1],
         })
     }
 
@@ -143,10 +187,15 @@ impl DbTab {
 
     fn run_query(&mut self, cx: &mut Context<Self>) {
         let Kind::Query { editor } = &self.kind else { return };
-        let sql = editor.read(cx).value().to_string();
+        let state = editor.read(cx);
+        let text = state.value().to_string();
+        let selection = state.selected_text().to_string();
+        let selection = (!state.selected_range().is_empty()).then_some(selection);
+        let sql = statement_at(&text, state.cursor(), selection.as_deref());
         if sql.trim().is_empty() {
             return;
         }
+        let row_cap = self.row_cap;
         let conn = self.conn.clone();
         self.running = true;
         self.error = None;
@@ -156,7 +205,7 @@ impl DbTab {
 
         bridge::run(
             cx,
-            async move { conn.execute(&sql, QUERY_ROW_CAP).await },
+            async move { conn.execute(&sql, row_cap).await },
             |tab, result, cx| {
                 tab.running = false;
                 tab.cancel = None;
@@ -167,6 +216,12 @@ impl DbTab {
                 cx.notify();
             },
         );
+    }
+
+    fn cycle_row_cap(&mut self, cx: &mut Context<Self>) {
+        let index = ROW_CAP_CHOICES.iter().position(|&c| c == self.row_cap).unwrap_or(0);
+        self.row_cap = ROW_CAP_CHOICES[(index + 1) % ROW_CAP_CHOICES.len()];
+        cx.notify();
     }
 
     fn cancel_query(&mut self, cx: &mut Context<Self>) {
@@ -191,6 +246,20 @@ impl DbTab {
                 .child("Run")
         };
 
+        let cap = div()
+            .id("db-row-cap")
+            .px_3()
+            .py_1()
+            .rounded_md()
+            .cursor_pointer()
+            .border_1()
+            .border_color(rgb(BORDER))
+            .text_color(rgb(TEXT_PRIMARY))
+            .text_size(px(12.))
+            .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.cycle_row_cap(cx)))
+            .child(format!("Keep {} rows", self.row_cap));
+
         let mut toolbar = div()
             .flex()
             .items_center()
@@ -199,7 +268,8 @@ impl DbTab {
             .py_2()
             .border_b_1()
             .border_color(rgb(BORDER))
-            .child(run);
+            .child(run)
+            .child(cap);
         if self.running {
             toolbar = toolbar.child(
                 div()
