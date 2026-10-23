@@ -21,10 +21,12 @@ const BACKGROUND: u32 = 0x1c1c1e;
 const FOREGROUND: u32 = 0xd4d4d4;
 
 // Chrome around the terminal grid, used to size the grid from the window.
+const RAIL_WIDTH: f32 = 56.0;
 const SIDEBAR_WIDTH: f32 = 240.0;
 const HEADER_HEIGHT: f32 = 44.0;
 const STATUS_HEIGHT: f32 = 28.0;
 
+const RAIL_BG: u32 = 0x1f1f22;
 const SIDEBAR_BG: u32 = 0x26262a;
 const SIDEBAR_SELECTED: u32 = 0x37373c;
 const SIDEBAR_HOVER: u32 = 0x2f2f34;
@@ -113,7 +115,7 @@ impl TerminalView {
         }
 
         let viewport = window.viewport_size();
-        let width = f32::from(viewport.width) - SIDEBAR_WIDTH - PADDING * 2.0;
+        let width = f32::from(viewport.width) - RAIL_WIDTH - SIDEBAR_WIDTH - PADDING * 2.0;
         let height = f32::from(viewport.height) - HEADER_HEIGHT - STATUS_HEIGHT - PADDING * 2.0;
         let cols = ((width / cell_width).floor() as usize).max(2);
         let rows = ((height / LINE_HEIGHT).floor() as usize).max(2);
@@ -259,8 +261,16 @@ fn main() {
     });
 }
 
-/// Window content: sidebar of sessions on the left, active terminal and status bar on the right.
+/// Top-level areas switched from the icon rail.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Section {
+    Terminal,
+    Database,
+}
+
+/// Window content: icon rail, a sidebar for the active section, then the section's main area.
 struct RootView {
+    section: Section,
     sessions: Vec<Entity<TerminalView>>,
     active: usize,
 }
@@ -268,7 +278,64 @@ struct RootView {
 impl RootView {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let first = TerminalView::new(window, cx);
-        Self { sessions: vec![first], active: 0 }
+        Self { section: Section::Terminal, sessions: vec![first], active: 0 }
+    }
+
+    fn switch_section(&mut self, section: Section, window: &mut Window, cx: &mut Context<Self>) {
+        self.section = section;
+        if section == Section::Terminal {
+            let handle = self.sessions[self.active].read(cx).focus_handle.clone();
+            window.focus(&handle, cx);
+        }
+        cx.notify();
+    }
+
+    fn render_rail(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let items = [(Section::Terminal, ">_", "Terminal"), (Section::Database, "DB", "Database")];
+        div()
+            .flex()
+            .flex_col()
+            .items_center()
+            .w(px(RAIL_WIDTH))
+            .h_full()
+            .flex_shrink_0()
+            .pt(px(44.))
+            .gap_2()
+            .bg(rgb(RAIL_BG))
+            .border_r_1()
+            .border_color(rgb(BORDER))
+            .children(items.into_iter().map(|(section, glyph, label)| {
+                let selected = self.section == section;
+                div()
+                    .id(label)
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .size(px(36.))
+                    .rounded_lg()
+                    .cursor_pointer()
+                    .text_size(px(12.))
+                    .text_color(rgb(if selected { TEXT_PRIMARY } else { TEXT_MUTED }))
+                    .bg(rgb(if selected { SIDEBAR_SELECTED } else { RAIL_BG }))
+                    .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                    .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
+                        this.switch_section(section, window, cx);
+                    }))
+                    .child(glyph)
+            }))
+    }
+
+    fn render_database_placeholder(&self) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .items_center()
+            .justify_center()
+            .size_full()
+            .gap_2()
+            .text_color(rgb(TEXT_MUTED))
+            .child(div().text_color(rgb(TEXT_PRIMARY)).text_size(px(14.)).child("Database"))
+            .child(div().text_size(px(12.)).child("CrateDB connections will appear here."))
     }
 
     fn new_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -387,21 +454,35 @@ impl RootView {
 
 impl Render for RootView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let active = self.sessions[self.active].clone();
-        div()
+        let body = match self.section {
+            Section::Terminal => div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_w_0()
+                .child(self.render_header())
+                .child(self.sessions[self.active].clone())
+                .child(self.render_status())
+                .into_any_element(),
+            Section::Database => div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_w_0()
+                .child(self.render_database_placeholder())
+                .into_any_element(),
+        };
+
+        let root = div()
             .flex()
             .size_full()
             .bg(rgb(BACKGROUND))
-            .child(self.render_sidebar(cx))
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .flex_1()
-                    .min_w_0()
-                    .child(self.render_header())
-                    .child(active)
-                    .child(self.render_status()),
-            )
+            .child(self.render_rail(cx));
+        let root = if self.section == Section::Terminal {
+            root.child(self.render_sidebar(cx))
+        } else {
+            root
+        };
+        root.child(body)
     }
 }
