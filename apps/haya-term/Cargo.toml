@@ -1,0 +1,13 @@
+[package]
+name = "haya-term"
+description = "Haya terminal prototype on GPUI."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+haya-pty = { path = "../../crates/haya-pty" }
+gpui-kit = { version = "0.8.0", features = ["gpui-fast"] }
+alacritty_terminal = "0.26"
+anyhow = "1"

@@ -1,0 +1,11 @@
+[package]
+name = "haya-pty"
+description = "Pseudo-terminal spawn, read, write, and resize for Haya."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+portable-pty = "0.9"
+anyhow = "1"
