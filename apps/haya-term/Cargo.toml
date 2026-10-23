@@ -11,3 +11,8 @@ haya-pty = { path = "../../crates/haya-pty" }
 gpui-kit = { version = "0.8.0", features = ["gpui-fast"] }
 alacritty_terminal = "0.26"
 anyhow = "1"
+haya-db = { path = "../../crates/haya-db" }
+keyring = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

@@ -1,6 +1,6 @@
 //! Integration tests against live servers started by the local Docker setup.
 //!
-//! PostgreSQL: localhost:5432, user postgres, password haya, database haya.
+//! PostgreSQL: localhost:5434, user postgres, password haya, database haya.
 //! CrateDB:    localhost:5433 (wire protocol), user crate, no password.
 
 use haya_db::{Connection, Dialect, Profile, quote_ident};
@@ -10,7 +10,7 @@ fn postgres_profile() -> Profile {
         name: "local-postgres".into(),
         dialect: Dialect::Postgres,
         host: "localhost".into(),
-        port: 5432,
+        port: 5434,
         user: "postgres".into(),
         password: Some("haya".into()),
         database: "haya".into(),

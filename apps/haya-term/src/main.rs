@@ -9,7 +9,10 @@ use alacritty_terminal::{
     vte::ansi::{Color, NamedColor, Processor, Rgb},
 };
 use gpui_kit::*;
+use gpui_kit::component::input::{Input, InputState};
 use haya_pty::PtySession;
+
+mod db;
 
 const ROWS: u16 = 30;
 const COLS: u16 = 100;
@@ -29,6 +32,7 @@ const TOOLBAR_LEFT: f32 = 84.0;
 const TITLEBAR_HEIGHT: f32 = 44.0;
 const HEADER_HEIGHT: f32 = 44.0;
 const STATUS_HEIGHT: f32 = 28.0;
+const DETAILS_WIDTH: f32 = 300.0;
 
 const RAIL_BG: u32 = 0x1f1f22;
 const SIDEBAR_BG: u32 = 0x26262a;
@@ -268,48 +272,135 @@ fn main() {
     });
 }
 
-/// Top-level areas switched from the icon rail.
+/// Top-level areas switched from the icon rail. They change the sidebar; tabs are shared.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Section {
     Terminal,
     Database,
 }
 
-/// Window content: icon rail on the far left, then the sidebar for the active section, then the main area.
+/// One tab in the workspace strip.
+enum WorkspaceTab {
+    Terminal(Entity<TerminalView>),
+    Db(Entity<db::DbTab>),
+}
+
+/// Window content: icon rail, sidebar for the active section, and one tab strip shared by all features.
 struct RootView {
     section: Section,
     sidebar_open: bool,
-    sessions: Vec<Entity<TerminalView>>,
-    active: usize,
+    tabs: Vec<WorkspaceTab>,
+    active_tab: usize,
+    db: Entity<db::DbView>,
+    plus_open: bool,
+    details_open: bool,
+    details_search: Entity<InputState>,
 }
 
 impl RootView {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let first = TerminalView::new(window, cx);
-        Self { section: Section::Terminal, sidebar_open: true, sessions: vec![first], active: 0 }
+        let db = cx.new(|cx| db::DbView::new(window, cx));
+        cx.subscribe_in(&db, window, |this, _, event, window, cx| {
+            this.on_db_event(event, window, cx)
+        })
+        .detach();
+        let details_search = cx.new(|cx| InputState::new(window, cx).placeholder("Search for field…"));
+        Self {
+            section: Section::Terminal,
+            sidebar_open: true,
+            tabs: vec![WorkspaceTab::Terminal(first)],
+            active_tab: 0,
+            db,
+            plus_open: false,
+            details_open: false,
+            details_search,
+        }
     }
 
-    fn new_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let session = TerminalView::new(window, cx);
-        self.sessions.push(session);
-        self.select(self.sessions.len() - 1, window, cx);
+    fn on_db_event(&mut self, event: &db::DbEvent, window: &mut Window, cx: &mut Context<Self>) {
+        match event {
+            db::DbEvent::OpenTable { profile, schema, table } => {
+                let existing = self.tabs.iter().position(|tab| match tab {
+                    WorkspaceTab::Db(entity) => entity.read(cx).shows_table(profile, schema, table),
+                    WorkspaceTab::Terminal(_) => false,
+                });
+                if let Some(index) = existing {
+                    self.select_tab(index, window, cx);
+                    return;
+                }
+                let Some((_, conn)) = self.db.read(cx).connection() else { return };
+                let tab = db::DbTab::open_table(profile.clone(), conn, schema.clone(), table.clone(), cx);
+                self.push_tab(WorkspaceTab::Db(tab), window, cx);
+            }
+            db::DbEvent::NewQuery => {
+                let Some((profile, conn)) = self.db.read(cx).connection() else { return };
+                let number = self
+                    .tabs
+                    .iter()
+                    .filter(|tab| matches!(tab, WorkspaceTab::Db(e) if e.read(cx).title().starts_with("Query")))
+                    .count()
+                    + 1;
+                let tab = db::DbTab::new_query(profile, conn, format!("Query {number}"), "SELECT 1;", window, cx);
+                self.push_tab(WorkspaceTab::Db(tab), window, cx);
+            }
+        }
     }
 
-    fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
-        self.section = Section::Terminal;
-        self.active = index;
-        let handle = self.sessions[index].read(cx).focus_handle.clone();
-        window.focus(&handle, cx);
-        cx.notify();
+    fn push_tab(&mut self, tab: WorkspaceTab, window: &mut Window, cx: &mut Context<Self>) {
+        self.tabs.push(tab);
+        let index = self.tabs.len() - 1;
+        self.select_tab(index, window, cx);
     }
 
-    fn switch_section(&mut self, section: Section, window: &mut Window, cx: &mut Context<Self>) {
-        self.section = section;
-        if section == Section::Terminal {
-            let handle = self.sessions[self.active].read(cx).focus_handle.clone();
+    fn new_terminal(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.plus_open = false;
+        let terminal = TerminalView::new(window, cx);
+        self.push_tab(WorkspaceTab::Terminal(terminal), window, cx);
+    }
+
+    fn select_tab(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        if index >= self.tabs.len() {
+            return;
+        }
+        self.active_tab = index;
+        self.plus_open = false;
+        if let WorkspaceTab::Terminal(terminal) = &self.tabs[index] {
+            let handle = terminal.read(cx).focus_handle.clone();
             window.focus(&handle, cx);
         }
         cx.notify();
+    }
+
+    fn close_tab(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.tabs.remove(index);
+        if self.tabs.is_empty() {
+            self.new_terminal(window, cx);
+            return;
+        }
+        let active = if index < self.active_tab {
+            self.active_tab - 1
+        } else {
+            self.active_tab.min(self.tabs.len() - 1)
+        };
+        self.select_tab(active, window, cx);
+    }
+
+    fn switch_section(&mut self, section: Section, cx: &mut Context<Self>) {
+        self.section = section;
+        cx.notify();
+    }
+
+    fn terminal_tab_titles(&self) -> Vec<(usize, String)> {
+        let mut titles = Vec::new();
+        let mut number = 0;
+        for (index, tab) in self.tabs.iter().enumerate() {
+            if let WorkspaceTab::Terminal(_) = tab {
+                number += 1;
+                titles.push((index, format!("Terminal {number}")));
+            }
+        }
+        titles
     }
 
     /// Left-most column with one button per section. Its top band is left empty for the traffic lights.
@@ -344,8 +435,8 @@ impl RootView {
                     .text_color(rgb(if selected { TEXT_PRIMARY } else { TEXT_MUTED }))
                     .bg(rgb(if selected { SIDEBAR_SELECTED } else { RAIL_BG }))
                     .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
-                    .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
-                        this.switch_section(section, window, cx);
+                    .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, _, cx| {
+                        this.switch_section(section, cx);
                     }))
                     .child(glyph)
             }))
@@ -414,11 +505,11 @@ impl RootView {
             .child(label)
     }
 
-    /// Sidebar content for the Terminal section: actions and the session list.
+    /// Sidebar content for the Terminal section: actions and the terminal list.
     fn render_terminal_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let mut sessions = Vec::new();
-        for index in 0..self.sessions.len() {
-            let selected = index == self.active;
+        for (index, title) in self.terminal_tab_titles() {
+            let selected = index == self.active_tab;
             sessions.push(
                 div()
                     .id(("session", index))
@@ -432,9 +523,9 @@ impl RootView {
                     .bg(rgb(if selected { SIDEBAR_SELECTED } else { SIDEBAR_BG }))
                     .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
                     .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
-                        this.select(index, window, cx);
+                        this.select_tab(index, window, cx);
                     }))
-                    .child(format!("Terminal {}", index + 1)),
+                    .child(title),
             );
         }
 
@@ -445,7 +536,7 @@ impl RootView {
             .px_2()
             .pt_2()
             .child(self.render_nav_row("new-terminal", "+", "New Terminal", cx, |this, window, cx| {
-                this.new_session(window, cx)
+                this.new_terminal(window, cx)
             }))
             .child(self.render_nav_row("search", "⌕", "Search", cx, |_, _, _| {}))
             .child(div().h_3())
@@ -460,35 +551,10 @@ impl RootView {
             .children(sessions)
     }
 
-    /// Sidebar content for the Database section. Connections come with the CrateDB client.
-    fn render_database_sidebar(&self) -> impl IntoElement {
-        div()
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .px_2()
-            .pt_2()
-            .child(
-                div()
-                    .px_3()
-                    .pb_1()
-                    .text_size(px(11.))
-                    .text_color(rgb(TEXT_MUTED))
-                    .child("Connections"),
-            )
-            .child(
-                div()
-                    .px_3()
-                    .text_size(px(12.))
-                    .text_color(rgb(TEXT_MUTED))
-                    .child("No connections yet"),
-            )
-    }
-
-    fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_sidebar(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let content = match self.section {
             Section::Terminal => self.render_terminal_sidebar(cx).into_any_element(),
-            Section::Database => self.render_database_sidebar().into_any_element(),
+            Section::Database => self.db.update(cx, |db, cx| db.sidebar(window, cx)),
         };
         div()
             .flex()
@@ -503,29 +569,85 @@ impl RootView {
             .child(content)
     }
 
-    /// Title bar above the main area. While the sidebar is closed it also hosts the toolbar,
-    /// so the sidebar can be reopened.
-    fn render_header(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let title = match self.section {
-            Section::Terminal => format!("Terminal {}", self.active + 1),
-            Section::Database => "Database".to_string(),
-        };
-        let leading = if self.sidebar_open {
-            div().into_any_element()
-        } else {
-            self.render_toolbar(cx).into_any_element()
-        };
-        div()
+    /// Tab strip shared by every feature. While the sidebar is closed it starts with the toolbar.
+    fn render_tab_strip(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let mut strip = div()
             .flex()
             .items_center()
+            .gap_1()
             .h(px(TITLEBAR_HEIGHT))
             .flex_shrink_0()
             .border_b_1()
             .border_color(rgb(BORDER))
             .text_color(rgb(TEXT_PRIMARY))
-            .text_size(px(13.))
-            .child(leading)
-            .child(div().px_4().child(title))
+            .text_size(px(12.));
+
+        if !self.sidebar_open {
+            strip = strip.child(self.render_toolbar(cx));
+        } else {
+            strip = strip.child(div().w(px(12.)));
+        }
+
+        let titles = self.terminal_tab_titles();
+        for (index, tab) in self.tabs.iter().enumerate() {
+            let title = match tab {
+                WorkspaceTab::Terminal(_) => titles
+                    .iter()
+                    .find(|(i, _)| *i == index)
+                    .map(|(_, t)| t.clone())
+                    .unwrap_or_default(),
+                WorkspaceTab::Db(entity) => entity.read(cx).title().to_string(),
+            };
+            let selected = index == self.active_tab;
+            strip = strip.child(
+                div()
+                    .id(("tab", index))
+                    .flex()
+                    .items_center()
+                    .gap_2()
+                    .px_3()
+                    .py_1()
+                    .rounded_md()
+                    .cursor_pointer()
+                    .text_color(rgb(if selected { TEXT_PRIMARY } else { TEXT_MUTED }))
+                    .bg(rgb(if selected { SIDEBAR_SELECTED } else { BACKGROUND }))
+                    .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                    .on_click(cx.listener(move |this, _: &ClickEvent, window, cx| {
+                        this.select_tab(index, window, cx);
+                    }))
+                    .child(title)
+                    .child(
+                        div()
+                            .id(("tab-close", index))
+                            .px_1()
+                            .rounded_sm()
+                            .text_color(rgb(TEXT_MUTED))
+                            .hover(|el| el.text_color(rgb(TEXT_PRIMARY)))
+                            .on_click(cx.listener(move |this, _: &ClickEvent, window, cx| {
+                                cx.stop_propagation();
+                                this.close_tab(index, window, cx);
+                            }))
+                            .child("×"),
+                    ),
+            );
+        }
+
+        strip.child(
+            div()
+                .id("tab-plus")
+                .ml_1()
+                .px_2()
+                .py_1()
+                .rounded_md()
+                .cursor_pointer()
+                .text_color(rgb(ACCENT))
+                .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                    this.plus_open = !this.plus_open;
+                    cx.notify();
+                }))
+                .child("+"),
+        )
     }
 
     fn render_status(&self) -> impl IntoElement {
@@ -541,59 +663,240 @@ impl RootView {
             .text_color(rgb(TEXT_MUTED))
             .text_size(px(11.))
             .child(div().text_color(rgb(ACCENT)).child("Local"))
-            .child(match self.sessions.len() {
-                1 => "1 session".to_string(),
-                n => format!("{n} sessions"),
+            .child(match self.tabs.len() {
+                1 => "1 tab".to_string(),
+                n => format!("{n} tabs"),
             })
     }
 
-    fn render_database_main(&self) -> impl IntoElement {
+    /// Status bar for a database tab: connection, result summary, and the details toggle.
+    fn render_db_status(&self, tab: &Entity<db::DbTab>, cx: &mut Context<Self>) -> impl IntoElement {
+        let tab_ref = tab.read(cx);
+        let dialect = match tab_ref.dialect() {
+            haya_db::Dialect::Postgres => "PostgreSQL",
+            haya_db::Dialect::CrateDb => "CrateDB",
+        };
+        let summary = if tab_ref.is_running() {
+            "Running…".to_string()
+        } else if let Some(error) = tab_ref.error() {
+            format!("Error: {}", error.lines().next().unwrap_or(""))
+        } else if let Some(result) = tab_ref.result() {
+            let rows = match result.rows_affected {
+                Some(count) if result.columns.is_empty() => format!("{count} rows affected"),
+                _ => format!(
+                    "{} rows{}",
+                    result.rows.len(),
+                    if result.truncated { " (capped)" } else { "" }
+                ),
+            };
+            let selected = match tab_ref.selected_row() {
+                Some(row) => format!(" · row {} selected", row + 1),
+                None => String::new(),
+            };
+            format!("{rows} · {} ms{selected}", result.elapsed.as_millis())
+        } else {
+            String::new()
+        };
+        let details_label = if self.details_open { "Details ▾" } else { "Details ▸" };
+
+        div()
+            .flex()
+            .items_center()
+            .gap_3()
+            .h(px(STATUS_HEIGHT))
+            .flex_shrink_0()
+            .px_4()
+            .border_t_1()
+            .border_color(rgb(BORDER))
+            .text_color(rgb(TEXT_MUTED))
+            .text_size(px(11.))
+            .child(div().text_color(rgb(ACCENT)).child(format!("{} · {dialect}", tab_ref.profile_name())))
+            .child(summary)
+            .child(div().flex_1())
+            .child(
+                div()
+                    .id("db-details-toggle")
+                    .px_2()
+                    .rounded_sm()
+                    .cursor_pointer()
+                    .hover(|el| el.text_color(rgb(TEXT_PRIMARY)))
+                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                        this.details_open = !this.details_open;
+                        cx.notify();
+                    }))
+                    .child(details_label),
+            )
+    }
+
+    /// Right-hand panel: the selected row as a list of fields, with a search box above.
+    fn render_details(&self, tab: &Entity<db::DbTab>, cx: &mut Context<Self>) -> impl IntoElement {
+        let tab_ref = tab.read(cx);
+        let search = self.details_search.read(cx).value().to_lowercase();
+        let mut body = div().flex().flex_col().gap_3().px_3().pb_3();
+
+        match (tab_ref.result(), tab_ref.selected_row()) {
+            (Some(result), Some(row)) => {
+                for (column, name) in result.columns.iter().enumerate() {
+                    if !search.is_empty() && !name.to_lowercase().contains(&search) {
+                        continue;
+                    }
+                    let value = result.rows[row][column].clone();
+                    let empty = value.is_none();
+                    body = body.child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .child(div().text_size(px(11.)).text_color(rgb(TEXT_MUTED)).child(name.clone()))
+                            .child(
+                                div()
+                                    .px_2()
+                                    .py_1p5()
+                                    .rounded_md()
+                                    .border_1()
+                                    .border_color(rgb(BORDER))
+                                    .bg(rgb(SIDEBAR_BG))
+                                    .font_family("Menlo")
+                                    .text_size(px(12.))
+                                    .text_color(rgb(if empty { TEXT_MUTED } else { TEXT_PRIMARY }))
+                                    .child(value.unwrap_or_else(|| "NULL".into())),
+                            ),
+                    );
+                }
+            }
+            _ => {
+                body = body.child(
+                    div()
+                        .pt_4()
+                        .text_size(px(12.))
+                        .text_color(rgb(TEXT_MUTED))
+                        .child("Select a row to see its fields."),
+                );
+            }
+        }
+
         div()
             .flex()
             .flex_col()
-            .items_center()
-            .justify_center()
-            .size_full()
-            .gap_2()
-            .text_color(rgb(TEXT_MUTED))
-            .child(div().text_color(rgb(TEXT_PRIMARY)).text_size(px(14.)).child("Database"))
-            .child(div().text_size(px(12.)).child("CrateDB connections will appear here."))
+            .w(px(DETAILS_WIDTH))
+            .h_full()
+            .flex_shrink_0()
+            .bg(rgb(SIDEBAR_BG))
+            .border_l_1()
+            .border_color(rgb(BORDER))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .p_3()
+                    .border_b_1()
+                    .border_color(rgb(BORDER))
+                    .child(div().text_size(px(12.)).text_color(rgb(TEXT_PRIMARY)).child("Details"))
+                    .child(Input::new(&self.details_search)),
+            )
+            .child(
+                div()
+                    .id("details-scroll")
+                    .flex_1()
+                    .min_h_0()
+                    .overflow_y_scroll()
+                    .pt_3()
+                    .child(body),
+            )
+    }
+
+    /// Menu opened by the strip's + button.
+    fn render_plus_menu(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let item = |id: &'static str, label: &'static str| {
+            div()
+                .id(id)
+                .px_3()
+                .py_1p5()
+                .rounded_md()
+                .cursor_pointer()
+                .text_size(px(12.))
+                .text_color(rgb(TEXT_PRIMARY))
+                .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                .child(label)
+        };
+        div()
+            .absolute()
+            .top(px(TITLEBAR_HEIGHT + 4.))
+            .right(px(12.))
+            .w(px(180.))
+            .p_1()
+            .rounded_lg()
+            .border_1()
+            .border_color(rgb(BORDER))
+            .bg(rgb(SIDEBAR_BG))
+            .flex()
+            .flex_col()
+            .child(item("plus-terminal", "New Terminal").on_click(cx.listener(
+                |this, _: &ClickEvent, window, cx| this.new_terminal(window, cx),
+            )))
+            .child(item("plus-query", "New Query").on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                this.plus_open = false;
+                this.db.update(cx, |db, cx| db.new_query_from_menu(cx));
+            })))
     }
 }
 
 impl Render for RootView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Keep every terminal's grid in sync with the space it actually gets.
         let inset = RAIL_WIDTH + if self.sidebar_open { SIDEBAR_WIDTH } else { 0.0 };
-        for session in &self.sessions {
-            session.update(cx, |session, _| session.inset_left = inset);
+        for tab in &self.tabs {
+            if let WorkspaceTab::Terminal(terminal) = tab {
+                terminal.update(cx, |terminal, _| terminal.inset_left = inset);
+            }
         }
 
-        let body = match self.section {
-            Section::Terminal => div()
+        let content: AnyElement = match self.tabs.get(self.active_tab) {
+            Some(WorkspaceTab::Terminal(terminal)) => div()
                 .flex()
                 .flex_col()
                 .flex_1()
                 .min_w_0()
-                .child(self.render_header(cx))
-                .child(self.sessions[self.active].clone())
+                .child(terminal.clone())
                 .child(self.render_status())
                 .into_any_element(),
-            Section::Database => div()
+            Some(WorkspaceTab::Db(tab)) => div()
                 .flex()
                 .flex_col()
                 .flex_1()
                 .min_w_0()
-                .child(self.render_header(cx))
-                .child(self.render_database_main())
+                .child(tab.clone())
+                .child(self.render_db_status(tab, cx))
                 .into_any_element(),
+            None => div().flex_1().into_any_element(),
         };
+
+        let main = div()
+            .relative()
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_w_0()
+            .child(self.render_tab_strip(cx))
+            .child(content)
+            ;
+        let main = if self.plus_open { main.child(self.render_plus_menu(cx)) } else { main };
 
         let root = div()
             .flex()
             .size_full()
             .bg(rgb(BACKGROUND))
             .child(self.render_rail(cx));
-        let root = if self.sidebar_open { root.child(self.render_sidebar(cx)) } else { root };
-        root.child(body)
+        let root = if self.sidebar_open { root.child(self.render_sidebar(window, cx)) } else { root };
+        let details_tab = match self.tabs.get(self.active_tab) {
+            Some(WorkspaceTab::Db(tab)) if self.details_open => Some(tab.clone()),
+            _ => None,
+        };
+        let root = root.child(main);
+        match details_tab {
+            Some(tab) => root.child(self.render_details(&tab, cx)),
+            None => root,
+        }
     }
 }

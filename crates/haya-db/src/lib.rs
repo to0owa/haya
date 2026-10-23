@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result, bail};
 use futures_util::TryStreamExt;
-use tokio_postgres::{CancelToken, Client, Config, NoTls, SimpleQueryMessage};
+pub use tokio_postgres::CancelToken;
+use tokio_postgres::{Client, Config, NoTls, SimpleQueryMessage};
 
 /// Which server dialect a connection talks to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
