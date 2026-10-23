@@ -13,14 +13,33 @@ use haya_pty::PtySession;
 
 const ROWS: u16 = 30;
 const COLS: u16 = 100;
-const BACKGROUND: u32 = 0x1e1e1e;
+const FONT_FAMILY: &str = "Menlo";
+const FONT_SIZE: f32 = 13.0;
+const LINE_HEIGHT: f32 = 18.0;
+const PADDING: f32 = 8.0;
+const BACKGROUND: u32 = 0x1c1c1e;
 const FOREGROUND: u32 = 0xd4d4d4;
+
+// Chrome around the terminal grid, used to size the grid from the window.
+const SIDEBAR_WIDTH: f32 = 240.0;
+const HEADER_HEIGHT: f32 = 44.0;
+const STATUS_HEIGHT: f32 = 28.0;
+
+const SIDEBAR_BG: u32 = 0x26262a;
+const SIDEBAR_SELECTED: u32 = 0x37373c;
+const SIDEBAR_HOVER: u32 = 0x2f2f34;
+const BORDER: u32 = 0x2e2e33;
+const TEXT_PRIMARY: u32 = 0xececec;
+const TEXT_MUTED: u32 = 0x8e8e93;
+const ACCENT: u32 = 0xe9a26a;
 
 pub struct TerminalView {
     focus_handle: FocusHandle,
     pty: Option<PtySession>,
     term: Term<VoidListener>,
     parser: Processor,
+    /// Current grid size as (cols, rows).
+    size: (usize, usize),
 }
 
 impl TerminalView {
@@ -34,6 +53,7 @@ impl TerminalView {
                 pty,
                 term: Term::new(Config::default(), &size, VoidListener),
                 parser: Processor::new(),
+                size: (COLS as usize, ROWS as usize),
             };
             // Pump PTY output into the emulator about 60 times a second.
             cx.spawn(async move |this: WeakEntity<Self>, cx: &mut AsyncApp| {
@@ -81,8 +101,37 @@ impl Focusable for TerminalView {
     }
 }
 
+impl TerminalView {
+    /// Recomputes the grid size from the window and resizes the emulator and the PTY when it changes.
+    fn sync_size(&mut self, window: &Window) {
+        let text_system = window.text_system();
+        let font_id = text_system.resolve_font(&font(FONT_FAMILY));
+        let Ok(cell_width) = text_system.ch_advance(font_id, px(FONT_SIZE)) else { return };
+        let cell_width = f32::from(cell_width);
+        if cell_width <= 0.0 {
+            return;
+        }
+
+        let viewport = window.viewport_size();
+        let width = f32::from(viewport.width) - SIDEBAR_WIDTH - PADDING * 2.0;
+        let height = f32::from(viewport.height) - HEADER_HEIGHT - STATUS_HEIGHT - PADDING * 2.0;
+        let cols = ((width / cell_width).floor() as usize).max(2);
+        let rows = ((height / LINE_HEIGHT).floor() as usize).max(2);
+
+        if (cols, rows) == self.size {
+            return;
+        }
+        self.size = (cols, rows);
+        self.term.resize(TermSize::new(cols, rows));
+        if let Some(pty) = &self.pty {
+            let _ = pty.resize(rows as u16, cols as u16);
+        }
+    }
+}
+
 impl Render for TerminalView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.sync_size(window);
         let content = self.term.renderable_content();
         let offset = content.display_offset as i32;
         let cursor = content.cursor.point;
@@ -116,13 +165,15 @@ impl Render for TerminalView {
             .flex()
             .flex_col()
             .id("terminal")
+            .flex_1()
+            .min_h_0()
             .track_focus(&self.focus_handle)
             .on_key_down(cx.listener(Self::on_key))
-            .size_full()
             .bg(rgb(BACKGROUND))
             .text_color(rgb(FOREGROUND))
-            .font_family("Menlo")
-            .text_size(px(13.))
+            .font_family(FONT_FAMILY)
+            .text_size(px(FONT_SIZE))
+            .line_height(px(LINE_HEIGHT))
             .p_2()
             .children(lines.into_iter().map(|(text, highlights)| {
                 let text = if text.is_empty() { " ".to_string() } else { text };
@@ -195,20 +246,162 @@ fn key_bytes(event: &KeyDownEvent) -> Option<Vec<u8>> {
 fn main() {
     gpui_kit::application().run(move |cx| {
         gpui_kit::init(cx);
-        gpui_kit::open_window(WindowOptions::default(), cx, |window, cx| {
-            let view = TerminalView::new(window, cx);
-            cx.new(|_| RootView { terminal: view })
-        })
-        .expect("Failed to open window");
+        let options = WindowOptions {
+            titlebar: Some(TitlebarOptions {
+                title: Some("Haya".into()),
+                appears_transparent: true,
+                traffic_light_position: Some(point(px(16.), px(16.))),
+            }),
+            ..Default::default()
+        };
+        gpui_kit::open_window(options, cx, |window, cx| cx.new(|cx| RootView::new(window, cx)))
+            .expect("Failed to open window");
     });
 }
 
+/// Window content: sidebar of sessions on the left, active terminal and status bar on the right.
 struct RootView {
-    terminal: Entity<TerminalView>,
+    sessions: Vec<Entity<TerminalView>>,
+    active: usize,
+}
+
+impl RootView {
+    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let first = TerminalView::new(window, cx);
+        Self { sessions: vec![first], active: 0 }
+    }
+
+    fn new_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let session = TerminalView::new(window, cx);
+        self.sessions.push(session);
+        self.select(self.sessions.len() - 1, window, cx);
+    }
+
+    fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.active = index;
+        let handle = self.sessions[index].read(cx).focus_handle.clone();
+        window.focus(&handle, cx);
+        cx.notify();
+    }
+
+    fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let items = self.sessions.iter().enumerate().map(|(index, _)| {
+            let selected = index == self.active;
+            div()
+                .id(("session", index))
+                .px_3()
+                .py_2()
+                .rounded_md()
+                .cursor_pointer()
+                .bg(rgb(if selected { SIDEBAR_SELECTED } else { SIDEBAR_BG }))
+                .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
+                    this.select(index, window, cx);
+                }))
+                .child(
+                    div()
+                        .text_color(rgb(TEXT_PRIMARY))
+                        .text_size(px(13.))
+                        .child(format!("Terminal {}", index + 1)),
+                )
+                .child(
+                    div()
+                        .text_color(rgb(TEXT_MUTED))
+                        .text_size(px(11.))
+                        .child(std::env::var("SHELL").unwrap_or_else(|_| "zsh".into())),
+                )
+        });
+
+        div()
+            .flex()
+            .flex_col()
+            .w(px(SIDEBAR_WIDTH))
+            .h_full()
+            .flex_shrink_0()
+            .bg(rgb(SIDEBAR_BG))
+            .border_r_1()
+            .border_color(rgb(BORDER))
+            .pt(px(44.))
+            .px_2()
+            .gap_1()
+            .child(
+                div()
+                    .id("new-terminal")
+                    .px_3()
+                    .py_2()
+                    .rounded_md()
+                    .cursor_pointer()
+                    .text_color(rgb(TEXT_PRIMARY))
+                    .text_size(px(13.))
+                    .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                    .on_click(cx.listener(|this: &mut Self, _: &ClickEvent, window, cx| {
+                        this.new_session(window, cx);
+                    }))
+                    .child("+  New Terminal"),
+            )
+            .child(
+                div()
+                    .px_3()
+                    .pt_4()
+                    .pb_1()
+                    .text_color(rgb(TEXT_MUTED))
+                    .text_size(px(11.))
+                    .child("Sessions"),
+            )
+            .children(items)
+    }
+
+    fn render_header(&self) -> impl IntoElement {
+        div()
+            .flex()
+            .items_center()
+            .h(px(HEADER_HEIGHT))
+            .flex_shrink_0()
+            .px_4()
+            .border_b_1()
+            .border_color(rgb(BORDER))
+            .text_color(rgb(TEXT_PRIMARY))
+            .text_size(px(13.))
+            .child(format!("Terminal {}", self.active + 1))
+    }
+
+    fn render_status(&self) -> impl IntoElement {
+        div()
+            .flex()
+            .items_center()
+            .gap_3()
+            .h(px(STATUS_HEIGHT))
+            .flex_shrink_0()
+            .px_4()
+            .border_t_1()
+            .border_color(rgb(BORDER))
+            .text_color(rgb(TEXT_MUTED))
+            .text_size(px(11.))
+            .child(div().text_color(rgb(ACCENT)).child("Local"))
+            .child(match self.sessions.len() {
+                1 => "1 session".to_string(),
+                n => format!("{n} sessions"),
+            })
+    }
 }
 
 impl Render for RootView {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        self.terminal.clone()
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let active = self.sessions[self.active].clone();
+        div()
+            .flex()
+            .size_full()
+            .bg(rgb(BACKGROUND))
+            .child(self.render_sidebar(cx))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .flex_1()
+                    .min_w_0()
+                    .child(self.render_header())
+                    .child(active)
+                    .child(self.render_status()),
+            )
     }
 }
