@@ -21,12 +21,16 @@ const BACKGROUND: u32 = 0x1c1c1e;
 const FOREGROUND: u32 = 0xd4d4d4;
 
 // Chrome around the terminal grid, used to size the grid from the window.
+const RAIL_WIDTH: f32 = 56.0;
 const SIDEBAR_WIDTH: f32 = 240.0;
-/// Space reserved for the traffic lights and toolbar when the sidebar is collapsed.
-const TOOLBAR_INSET: f32 = 84.0;
+/// Absolute x where the toolbar starts, just right of the traffic lights.
+const TOOLBAR_LEFT: f32 = 84.0;
+/// Height of the top band that the traffic lights occupy.
+const TITLEBAR_HEIGHT: f32 = 44.0;
 const HEADER_HEIGHT: f32 = 44.0;
 const STATUS_HEIGHT: f32 = 28.0;
 
+const RAIL_BG: u32 = 0x1f1f22;
 const SIDEBAR_BG: u32 = 0x26262a;
 const SIDEBAR_SELECTED: u32 = 0x37373c;
 const SIDEBAR_HOVER: u32 = 0x2f2f34;
@@ -42,7 +46,7 @@ pub struct TerminalView {
     parser: Processor,
     /// Current grid size as (cols, rows).
     size: (usize, usize),
-    /// Width taken by the sidebar to the left of the terminal, set by the root view.
+    /// Width taken by the rail and sidebar to the left of the terminal, set by the root view.
     inset_left: f32,
 }
 
@@ -58,7 +62,7 @@ impl TerminalView {
                 term: Term::new(Config::default(), &size, VoidListener),
                 parser: Processor::new(),
                 size: (COLS as usize, ROWS as usize),
-                inset_left: SIDEBAR_WIDTH,
+                inset_left: RAIL_WIDTH + SIDEBAR_WIDTH,
             };
             // Pump PTY output into the emulator about 60 times a second.
             cx.spawn(async move |this: WeakEntity<Self>, cx: &mut AsyncApp| {
@@ -271,7 +275,7 @@ enum Section {
     Database,
 }
 
-/// Window content: icon rail, a sidebar for the active section, then the section's main area.
+/// Window content: icon rail on the far left, then the sidebar for the active section, then the main area.
 struct RootView {
     section: Section,
     sidebar_open: bool,
@@ -285,6 +289,20 @@ impl RootView {
         Self { section: Section::Terminal, sidebar_open: true, sessions: vec![first], active: 0 }
     }
 
+    fn new_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let session = TerminalView::new(window, cx);
+        self.sessions.push(session);
+        self.select(self.sessions.len() - 1, window, cx);
+    }
+
+    fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.section = Section::Terminal;
+        self.active = index;
+        let handle = self.sessions[index].read(cx).focus_handle.clone();
+        window.focus(&handle, cx);
+        cx.notify();
+    }
+
     fn switch_section(&mut self, section: Section, window: &mut Window, cx: &mut Context<Self>) {
         self.section = section;
         if section == Section::Terminal {
@@ -294,32 +312,46 @@ impl RootView {
         cx.notify();
     }
 
-    fn render_database_placeholder(&self) -> impl IntoElement {
+    /// Left-most column with one button per section. Its top band is left empty for the traffic lights.
+    fn render_rail(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let items = [
+            (Section::Terminal, ">_", "rail-terminal"),
+            (Section::Database, "DB", "rail-database"),
+        ];
         div()
             .flex()
             .flex_col()
             .items_center()
-            .justify_center()
-            .size_full()
+            .w(px(RAIL_WIDTH))
+            .h_full()
+            .flex_shrink_0()
+            .pt(px(TITLEBAR_HEIGHT))
             .gap_2()
-            .text_color(rgb(TEXT_MUTED))
-            .child(div().text_color(rgb(TEXT_PRIMARY)).text_size(px(14.)).child("Database"))
-            .child(div().text_size(px(12.)).child("CrateDB connections will appear here."))
+            .bg(rgb(RAIL_BG))
+            .border_r_1()
+            .border_color(rgb(BORDER))
+            .children(items.into_iter().map(|(section, glyph, id)| {
+                let selected = self.section == section;
+                div()
+                    .id(id)
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .size(px(36.))
+                    .rounded_lg()
+                    .cursor_pointer()
+                    .text_size(px(12.))
+                    .text_color(rgb(if selected { TEXT_PRIMARY } else { TEXT_MUTED }))
+                    .bg(rgb(if selected { SIDEBAR_SELECTED } else { RAIL_BG }))
+                    .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+                    .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
+                        this.switch_section(section, window, cx);
+                    }))
+                    .child(glyph)
+            }))
     }
 
-    fn new_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let session = TerminalView::new(window, cx);
-        self.sessions.push(session);
-        self.select(self.sessions.len() - 1, window, cx);
-    }
-
-    fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
-        self.active = index;
-        let handle = self.sessions[index].read(cx).focus_handle.clone();
-        window.focus(&handle, cx);
-        cx.notify();
-    }
-
+    /// Sidebar toggle, back, and forward. Starts after the traffic lights, so it never overlaps them.
     fn render_toolbar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let icon = |id: &'static str, glyph: &'static str, enabled: bool| {
             let base = div()
@@ -342,10 +374,9 @@ impl RootView {
             .flex()
             .items_center()
             .gap_1()
-            .h(px(44.))
+            .h(px(TITLEBAR_HEIGHT))
             .flex_shrink_0()
-            .pl(px(TOOLBAR_INSET))
-            .pr_2()
+            .pl(px(TOOLBAR_LEFT - RAIL_WIDTH))
             .child(icon("toggle-sidebar", "▤", true).on_click(cx.listener(
                 |this: &mut Self, _: &ClickEvent, _, cx| {
                     this.sidebar_open = !this.sidebar_open;
@@ -361,7 +392,6 @@ impl RootView {
         id: &'static str,
         glyph: &'static str,
         label: &'static str,
-        selected: bool,
         cx: &mut Context<Self>,
         on_click: impl Fn(&mut Self, &mut Window, &mut Context<Self>) + 'static,
     ) -> impl IntoElement {
@@ -375,27 +405,20 @@ impl RootView {
             .rounded_md()
             .cursor_pointer()
             .text_size(px(13.))
-            .text_color(rgb(if selected { TEXT_PRIMARY } else { TEXT_MUTED }))
-            .bg(rgb(if selected { SIDEBAR_SELECTED } else { SIDEBAR_BG }))
-            .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
+            .text_color(rgb(TEXT_MUTED))
+            .hover(|el| el.bg(rgb(SIDEBAR_HOVER)).text_color(rgb(TEXT_PRIMARY)))
             .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
                 on_click(this, window, cx);
             }))
-            .child(
-                div()
-                    .w(px(22.))
-                    .whitespace_nowrap()
-                    .text_color(rgb(TEXT_MUTED))
-                    .child(glyph),
-            )
+            .child(div().w(px(22.)).whitespace_nowrap().text_color(rgb(TEXT_MUTED)).child(glyph))
             .child(label)
     }
 
-    fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let terminal_selected = self.section == Section::Terminal;
+    /// Sidebar content for the Terminal section: actions and the session list.
+    fn render_terminal_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let mut sessions = Vec::new();
         for index in 0..self.sessions.len() {
-            let selected = terminal_selected && index == self.active;
+            let selected = index == self.active;
             sessions.push(
                 div()
                     .id(("session", index))
@@ -409,13 +432,64 @@ impl RootView {
                     .bg(rgb(if selected { SIDEBAR_SELECTED } else { SIDEBAR_BG }))
                     .hover(|el| el.bg(rgb(SIDEBAR_HOVER)))
                     .on_click(cx.listener(move |this: &mut Self, _: &ClickEvent, window, cx| {
-                        this.section = Section::Terminal;
                         this.select(index, window, cx);
                     }))
                     .child(format!("Terminal {}", index + 1)),
             );
         }
 
+        div()
+            .flex()
+            .flex_col()
+            .gap_0p5()
+            .px_2()
+            .pt_2()
+            .child(self.render_nav_row("new-terminal", "+", "New Terminal", cx, |this, window, cx| {
+                this.new_session(window, cx)
+            }))
+            .child(self.render_nav_row("search", "⌕", "Search", cx, |_, _, _| {}))
+            .child(div().h_3())
+            .child(
+                div()
+                    .px_3()
+                    .pb_1()
+                    .text_size(px(11.))
+                    .text_color(rgb(TEXT_MUTED))
+                    .child("Sessions"),
+            )
+            .children(sessions)
+    }
+
+    /// Sidebar content for the Database section. Connections come with the CrateDB client.
+    fn render_database_sidebar(&self) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .gap_0p5()
+            .px_2()
+            .pt_2()
+            .child(
+                div()
+                    .px_3()
+                    .pb_1()
+                    .text_size(px(11.))
+                    .text_color(rgb(TEXT_MUTED))
+                    .child("Connections"),
+            )
+            .child(
+                div()
+                    .px_3()
+                    .text_size(px(12.))
+                    .text_color(rgb(TEXT_MUTED))
+                    .child("No connections yet"),
+            )
+    }
+
+    fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let content = match self.section {
+            Section::Terminal => self.render_terminal_sidebar(cx).into_any_element(),
+            Section::Database => self.render_database_sidebar().into_any_element(),
+        };
         div()
             .flex()
             .flex_col()
@@ -426,53 +500,16 @@ impl RootView {
             .border_r_1()
             .border_color(rgb(BORDER))
             .child(self.render_toolbar(cx))
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_0p5()
-                    .px_2()
-                    .pt_2()
-                    .child(self.render_nav_row(
-                        "new-terminal",
-                        "+",
-                        "New Terminal",
-                        false,
-                        cx,
-                        |this, window, cx| this.new_session(window, cx),
-                    ))
-                    .child(self.render_nav_row(
-                        "search",
-                        "⌕",
-                        "Search",
-                        false,
-                        cx,
-                        |_, _, _| {},
-                    ))
-                    .child(div().h_3())
-                    .child(self.render_nav_row(
-                        "section-terminal",
-                        ">_",
-                        "Terminal",
-                        terminal_selected,
-                        cx,
-                        |this, window, cx| this.switch_section(Section::Terminal, window, cx),
-                    ))
-                    .children(sessions)
-                    .child(self.render_nav_row(
-                        "section-database",
-                        "DB",
-                        "Database",
-                        self.section == Section::Database,
-                        cx,
-                        |this, window, cx| this.switch_section(Section::Database, window, cx),
-                    )),
-            )
+            .child(content)
     }
 
-    /// Title bar above the terminal. While the sidebar is closed it also hosts the toolbar,
+    /// Title bar above the main area. While the sidebar is closed it also hosts the toolbar,
     /// so the sidebar can be reopened.
     fn render_header(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let title = match self.section {
+            Section::Terminal => format!("Terminal {}", self.active + 1),
+            Section::Database => "Database".to_string(),
+        };
         let leading = if self.sidebar_open {
             div().into_any_element()
         } else {
@@ -481,14 +518,14 @@ impl RootView {
         div()
             .flex()
             .items_center()
-            .h(px(HEADER_HEIGHT))
+            .h(px(TITLEBAR_HEIGHT))
             .flex_shrink_0()
             .border_b_1()
             .border_color(rgb(BORDER))
             .text_color(rgb(TEXT_PRIMARY))
             .text_size(px(13.))
             .child(leading)
-            .child(div().px_4().child(format!("Terminal {}", self.active + 1)))
+            .child(div().px_4().child(title))
     }
 
     fn render_status(&self) -> impl IntoElement {
@@ -509,11 +546,24 @@ impl RootView {
                 n => format!("{n} sessions"),
             })
     }
+
+    fn render_database_main(&self) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .items_center()
+            .justify_center()
+            .size_full()
+            .gap_2()
+            .text_color(rgb(TEXT_MUTED))
+            .child(div().text_color(rgb(TEXT_PRIMARY)).text_size(px(14.)).child("Database"))
+            .child(div().text_size(px(12.)).child("CrateDB connections will appear here."))
+    }
 }
 
 impl Render for RootView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let inset = if self.sidebar_open { SIDEBAR_WIDTH } else { 0.0 };
+        let inset = RAIL_WIDTH + if self.sidebar_open { SIDEBAR_WIDTH } else { 0.0 };
         for session in &self.sessions {
             session.update(cx, |session, _| session.inset_left = inset);
         }
@@ -533,11 +583,16 @@ impl Render for RootView {
                 .flex_col()
                 .flex_1()
                 .min_w_0()
-                .child(self.render_database_placeholder())
+                .child(self.render_header(cx))
+                .child(self.render_database_main())
                 .into_any_element(),
         };
 
-        let root = div().flex().size_full().bg(rgb(BACKGROUND));
+        let root = div()
+            .flex()
+            .size_full()
+            .bg(rgb(BACKGROUND))
+            .child(self.render_rail(cx));
         let root = if self.sidebar_open { root.child(self.render_sidebar(cx)) } else { root };
         root.child(body)
     }
