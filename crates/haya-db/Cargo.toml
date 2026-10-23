@@ -1,0 +1,16 @@
+[package]
+name = "haya-db"
+description = "Database connections for Haya: schema discovery, paged reads, bounded SQL execution."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+tokio-postgres = { version = "0.7", features = ["runtime"] }
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+anyhow = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/haya-pty", "apps/haya-term"]
+members = ["crates/haya-pty", "crates/haya-db", "apps/haya-term"]
 
 [workspace.package]
 edition = "2024"
