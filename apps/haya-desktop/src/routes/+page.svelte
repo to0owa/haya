@@ -2,12 +2,13 @@
   import SidebarWrapper from "../mestero/lib/SidebarWrapper.svelte";
   import Terminal from "../haya/Terminal.svelte";
   import Navigator from "../haya/Navigator.svelte";
+  import Grid from "../haya/Grid.svelte";
 
   let width = $state(260);
   let mode = $state<"expanded" | "compact" | "mini">("expanded");
   let open = $state(true);
 
-  let openTables = $state<{ id: number; title: string }[]>([]);
+  let openTables = $state<{ id: number; title: string; schema: string; table: string }[]>([]);
   let activeTab = $state<"terminal" | number>("terminal");
   let nextId = 1;
 
@@ -19,7 +20,7 @@
       return;
     }
     const id = nextId++;
-    openTables = [...openTables, { id, title }];
+    openTables = [...openTables, { id, title, schema, table }];
     activeTab = id;
   }
 </script>
@@ -40,7 +41,7 @@
       <div class="pane" class:hidden={activeTab !== "terminal"}><Terminal /></div>
       {#each openTables as tab (tab.id)}
         <div class="pane" class:hidden={activeTab !== tab.id}>
-          <div class="placeholder">{tab.title} (grid next)</div>
+          <Grid schema={tab.schema} table={tab.table} />
         </div>
       {/each}
     </div>
