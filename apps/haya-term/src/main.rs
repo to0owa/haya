@@ -14,6 +14,8 @@ use haya_pty::PtySession;
 
 mod db;
 
+/// Lines kept above the screen. Alacritty defaults to 10,000, which costs tens of MB per terminal.
+const SCROLLBACK_LINES: usize = 1_000;
 const ROWS: u16 = 30;
 const COLS: u16 = 100;
 const FONT_FAMILY: &str = "Menlo";
@@ -63,7 +65,11 @@ impl TerminalView {
             let view = Self {
                 focus_handle: cx.focus_handle(),
                 pty,
-                term: Term::new(Config::default(), &size, VoidListener),
+                term: Term::new(
+                    Config { scrolling_history: SCROLLBACK_LINES, ..Config::default() },
+                    &size,
+                    VoidListener,
+                ),
                 parser: Processor::new(),
                 size: (COLS as usize, ROWS as usize),
                 inset_left: RAIL_WIDTH + SIDEBAR_WIDTH,
