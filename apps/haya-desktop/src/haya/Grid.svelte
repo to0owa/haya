@@ -10,7 +10,7 @@
     elapsed_ms: number;
   };
 
-  let { schema, table }: { schema: string; table: string } = $props();
+  let { schema, table, onselect }: { schema: string; table: string; onselect?: (columns: string[], row: (string | null)[]) => void } = $props();
 
   const PAGE = 200;
   const ROW_H = 26;
@@ -85,7 +85,10 @@
               class:is-alt={index % 2 === 1}
               class:is-selected={selected === index}
               style="top: {index * ROW_H}px; height: {ROW_H}px;"
-              onclick={() => (selected = index)}
+              onclick={() => {
+                selected = index;
+                if (result) onselect?.(result.columns, result.rows[index]);
+              }}
               role="row"
               tabindex="-1"
             >
