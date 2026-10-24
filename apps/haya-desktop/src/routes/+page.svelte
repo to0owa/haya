@@ -1,65 +1,60 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
-  import { invoke } from "@tauri-apps/api/core";
-  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-  import { Terminal } from "@xterm/xterm";
-  import { FitAddon } from "@xterm/addon-fit";
-  import "@xterm/xterm/css/xterm.css";
+  import SidebarWrapper from "../mestero/lib/SidebarWrapper.svelte";
+  import Terminal from "../haya/Terminal.svelte";
+  import Navigator from "../haya/Navigator.svelte";
 
-  let host: HTMLDivElement;
-  let term: Terminal;
-  let fit: FitAddon;
-  let id: number | null = null;
-  let unlisten: UnlistenFn | undefined;
+  let width = $state(260);
+  let mode = $state<"expanded" | "compact" | "mini">("expanded");
+  let open = $state(true);
 
-  function decode(base64: string): Uint8Array {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
+  let openTables = $state<{ id: number; title: string }[]>([]);
+  let activeTab = $state<"terminal" | number>("terminal");
+  let nextId = 1;
+
+  function openTable(schema: string, table: string) {
+    const title = `${schema}.${table}`;
+    const existing = openTables.find((t) => t.title === title);
+    if (existing) {
+      activeTab = existing.id;
+      return;
+    }
+    const id = nextId++;
+    openTables = [...openTables, { id, title }];
+    activeTab = id;
   }
-
-  onMount(async () => {
-    term = new Terminal({
-      fontFamily: "Menlo, monospace",
-      fontSize: 13,
-      cursorBlink: true,
-      theme: { background: "#1c1c1e", foreground: "#d4d4d4" },
-    });
-    fit = new FitAddon();
-    term.loadAddon(fit);
-    term.open(host);
-    fit.fit();
-
-    unlisten = await listen<{ id: number; data: string }>("pty-output", (event) => {
-      if (event.payload.id === id) term.write(decode(event.payload.data));
-    });
-
-    id = await invoke<number>("pty_spawn", { rows: term.rows, cols: term.cols });
-    term.onData((data) => invoke("pty_write", { id, data }));
-    term.onResize(({ rows, cols }) => invoke("pty_resize", { id, rows, cols }));
-
-    window.addEventListener("resize", () => fit.fit());
-  });
-
-  onDestroy(() => {
-    unlisten?.();
-    if (id !== null) invoke("pty_close", { id });
-    term?.dispose();
-  });
 </script>
 
-<div class="terminal" bind:this={host}></div>
+<div class="shell">
+  <SidebarWrapper side="left" bind:width bind:mode bind:open>
+    <Navigator onOpenTable={openTable} />
+  </SidebarWrapper>
+
+  <main class="main">
+    <div class="strip">
+      <button class="tab" class:selected={activeTab === "terminal"} onclick={() => (activeTab = "terminal")}>Terminal 1</button>
+      {#each openTables as tab (tab.id)}
+        <button class="tab" class:selected={activeTab === tab.id} onclick={() => (activeTab = tab.id)}>{tab.title}</button>
+      {/each}
+    </div>
+    <div class="content">
+      <div class="pane" class:hidden={activeTab !== "terminal"}><Terminal /></div>
+      {#each openTables as tab (tab.id)}
+        <div class="pane" class:hidden={activeTab !== tab.id}>
+          <div class="placeholder">{tab.title} (grid next)</div>
+        </div>
+      {/each}
+    </div>
+  </main>
+</div>
 
 <style>
-  :global(html, body) {
-    margin: 0;
-    height: 100%;
-    background: #1c1c1e;
-  }
-  .terminal {
-    height: 100vh;
-    padding: 8px;
-    box-sizing: border-box;
-  }
+  .shell { display: flex; height: 100vh; width: 100vw; overflow: hidden; background: #1c1c1e; color: #ececec; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .strip { display: flex; gap: 4px; padding: 6px 8px; border-bottom: 1px solid #2e2e33; }
+  .tab { background: none; border: 0; color: #8e8e93; padding: 4px 10px; border-radius: 6px; font: inherit; font-size: 12px; cursor: pointer; }
+  .tab.selected { background: #37373c; color: #ececec; }
+  .content { flex: 1; min-height: 0; position: relative; }
+  .pane { position: absolute; inset: 0; }
+  .pane.hidden { display: none; }
+  .placeholder { padding: 16px; color: #8e8e93; font-size: 13px; }
 </style>
