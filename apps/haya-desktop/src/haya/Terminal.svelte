@@ -24,7 +24,7 @@
       fontFamily: "Menlo, monospace",
       fontSize: 13,
       cursorBlink: true,
-      theme: { background: "#1c1c1e", foreground: "#d4d4d4" },
+      theme: { background: "#1E2020", foreground: "#e6e9e1", cursor: "#e5e9df", selectionBackground: "#303b37" },
     });
     fit = new FitAddon();
     term.loadAddon(fit);
@@ -50,5 +50,5 @@
 <div class="terminal" bind:this={host}></div>
 
 <style>
-  .terminal { height: 100%; width: 100%; padding: 8px; box-sizing: border-box; background: #1c1c1e; }
+  .terminal { height: 100%; width: 100%; padding: 8px; box-sizing: border-box; background: var(--bg); }
 </style>

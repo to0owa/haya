@@ -25,22 +25,22 @@
   }
 </script>
 
-<div class="shell">
+<div class="haya-shell">
   <SidebarWrapper side="left" bind:width bind:mode bind:open>
     <Navigator onOpenTable={openTable} />
   </SidebarWrapper>
 
-  <main class="main">
-    <div class="strip">
-      <button class="tab" class:selected={activeTab === "terminal"} onclick={() => (activeTab = "terminal")}>Terminal 1</button>
+  <main class="haya-main">
+    <div class="haya-tabs" role="tablist">
+      <button class="haya-tab" role="tab" aria-selected={activeTab === "terminal"} onclick={() => (activeTab = "terminal")}>Terminal 1</button>
       {#each openTables as tab (tab.id)}
-        <button class="tab" class:selected={activeTab === tab.id} onclick={() => (activeTab = tab.id)}>{tab.title}</button>
+        <button class="haya-tab" role="tab" aria-selected={activeTab === tab.id} onclick={() => (activeTab = tab.id)}>{tab.title}</button>
       {/each}
     </div>
-    <div class="content">
-      <div class="pane" class:hidden={activeTab !== "terminal"}><Terminal /></div>
+    <div class="haya-content">
+      <div class="haya-pane" class:hidden={activeTab !== "terminal"}><Terminal /></div>
       {#each openTables as tab (tab.id)}
-        <div class="pane" class:hidden={activeTab !== tab.id}>
+        <div class="haya-pane" class:hidden={activeTab !== tab.id}>
           <Grid schema={tab.schema} table={tab.table} />
         </div>
       {/each}
@@ -49,13 +49,8 @@
 </div>
 
 <style>
-  .shell { display: flex; height: 100vh; width: 100vw; overflow: hidden; background: #1c1c1e; color: #ececec; }
-  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .strip { display: flex; gap: 4px; padding: 6px 8px; border-bottom: 1px solid #2e2e33; }
-  .tab { background: none; border: 0; color: #8e8e93; padding: 4px 10px; border-radius: 6px; font: inherit; font-size: 12px; cursor: pointer; }
-  .tab.selected { background: #37373c; color: #ececec; }
-  .content { flex: 1; min-height: 0; position: relative; }
-  .pane { position: absolute; inset: 0; }
-  .pane.hidden { display: none; }
-  .placeholder { padding: 16px; color: #8e8e93; font-size: 13px; }
+  :global(body) { overflow: hidden; }
+  .haya-content { flex: 1; min-height: 0; position: relative; }
+  .haya-pane { position: absolute; inset: 0; }
+  .haya-pane.hidden { display: none; }
 </style>

@@ -36,36 +36,28 @@
   }
 </script>
 
-<div class="nav">
-  <div class="label">Connections</div>
+<div class="haya-nav">
+  <div class="haya-label">Connections</div>
   {#each profiles as profile (profile.name)}
-    <button class="row" class:selected={active === profile.name} onclick={() => connect(profile.name)}>
+    <button class="haya-row" aria-selected={active === profile.name} onclick={() => connect(profile.name)}>
       {profile.name} · {profile.dialect === "cratedb" ? "CrateDB" : "PostgreSQL"}
     </button>
   {/each}
-  {#if status}<div class="status">{status}</div>{/if}
+  {#if status}<div class="haya-status-line" class:is-error={status?.startsWith("connect") || status?.includes("error")}>{status}</div>{/if}
 
   {#if active}
-    <div class="label">Schemas</div>
+    <div class="haya-label">Schemas</div>
     {#each schemas as schema, index (schema.name)}
-      <button class="row" onclick={() => toggle(index)}>
+      <button class="haya-row" onclick={() => toggle(index)}>
         {schema.expanded ? "▾" : "▸"} {schema.name}
       </button>
       {#if schema.expanded}
         {#each schema.tables ?? [] as table (table)}
-          <button class="row table" onclick={() => onOpenTable(schema.name, table)}>{table}</button>
+          <button class="haya-row is-table" onclick={() => onOpenTable(schema.name, table)}>{table}</button>
         {/each}
       {/if}
     {/each}
   {/if}
 </div>
 
-<style>
-  .nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; }
-  .label { padding: 12px 8px 4px; font-size: 11px; color: var(--quiet, #8e8e93); }
-  .row { text-align: left; background: none; border: 0; padding: 6px 8px; border-radius: 6px; color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
-  .row:hover { background: var(--hover, #2f2f34); }
-  .row.selected { background: var(--control, #37373c); }
-  .row.table { padding-left: 22px; font-size: 12px; }
-  .status { padding: 6px 8px; color: #ff6b6b; font-size: 12px; }
-</style>
+

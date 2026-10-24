@@ -58,44 +58,45 @@
   onMount(() => load(0));
 </script>
 
-<div class="wrap">
-  <div class="status">
-    {#if error}<span class="err">{error}</span>
+<div class="haya-grid">
+  <div class="haya-grid-bar">
+    {#if error}<span class="is-error">{error}</span>
     {:else if result}{result.rows.length} rows{result.truncated ? " (capped)" : ""} · {result.elapsed_ms} ms · rows {offset + 1}–{offset + result.rows.length}
-      <button onclick={() => load(Math.max(0, offset - PAGE))} disabled={offset === 0}>Prev</button>
-      <button onclick={() => load(offset + PAGE)} disabled={result.rows.length < PAGE}>Next</button>
+      <span class="spacer"></span><button class="haya-button" onclick={() => load(Math.max(0, offset - PAGE))} disabled={offset === 0}>Prev</button>
+      <button class="haya-button" onclick={() => load(offset + PAGE)} disabled={result.rows.length < PAGE}>Next</button>
     {:else}Loading…{/if}
   </div>
 
   {#if result}
     {@const total = GUTTER + widths.reduce((a, b) => a + b, 0)}
-    <div class="scroll" bind:clientHeight={viewportH} onscroll={(e) => (scrollTop = (e.currentTarget as HTMLElement).scrollTop)}>
-      <div class="inner" style="min-width: {total}px;">
-        <div class="head" style="height: {HEADER_H}px;">
-          <div class="gutter"></div>
+    <div class="haya-scroll" bind:clientHeight={viewportH} onscroll={(e) => (scrollTop = (e.currentTarget as HTMLElement).scrollTop)}>
+      <div class="haya-inner" style="min-width: {total}px;">
+        <div class="haya-head">
+          <div class="haya-gutter"></div>
           {#each result.columns as name, c (c)}
-            <div class="cell" style="width: {widths[c]}px;">{name}</div>
+            <div class="haya-cell" class:is-fill={c === result.columns.length - 1} style="{c === result.columns.length - 1 ? `min-width: ${widths[c]}px;` : `width: ${widths[c]}px;`}">{name}</div>
           {/each}
         </div>
-        <div class="body" style="height: {result.rows.length * ROW_H}px;">
+        <div class="haya-body" style="height: {result.rows.length * ROW_H}px;">
           {#each result.rows.slice(first, last) as row, i (first + i)}
             {@const index = first + i}
             <div
-              class="line"
-              class:alt={index % 2 === 1}
-              class:sel={selected === index}
+              class="haya-line"
+              class:is-alt={index % 2 === 1}
+              class:is-selected={selected === index}
               style="top: {index * ROW_H}px; height: {ROW_H}px;"
               onclick={() => (selected = index)}
               role="row"
               tabindex="-1"
             >
-              <div class="gutter num">{offset + index + 1}</div>
+              <div class="haya-gutter">{offset + index + 1}</div>
               {#each row as cell, c (c)}
                 <div
-                  class="cell"
-                  class:num={numeric[c]}
-                  class:null={cell === null}
-                  style="width: {widths[c]}px;"
+                  class="haya-cell"
+                  class:is-num={numeric[c]}
+                  class:is-null={cell === null}
+                  class:is-fill={c === row.length - 1}
+                  style="{c === row.length - 1 ? `min-width: ${widths[c]}px;` : `width: ${widths[c]}px;`}"
                 >{cell ?? "NULL"}</div>
               {/each}
             </div>
@@ -106,24 +107,4 @@
   {/if}
 </div>
 
-<style>
-  .wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; background: #1c1c1e; font-size: 12px; }
-  .status { padding: 6px 12px; color: #8e8e93; font-size: 11px; border-bottom: 1px solid #2e2e33; display: flex; gap: 8px; align-items: center; }
-  .status button { background: none; border: 1px solid #333338; color: #d4d4d4; border-radius: 4px; padding: 2px 8px; font: inherit; cursor: pointer; }
-  .status button:disabled { opacity: 0.4; cursor: default; }
-  .err { color: #ff6b6b; }
-  .scroll { flex: 1; min-height: 0; overflow: auto; }
-  .inner { position: relative; height: 100%; }
-  .head, .line { display: flex; font-family: Menlo, monospace; }
-  .head { position: sticky; top: 0; z-index: 1; background: #26262a; border-bottom: 1px solid #333338; color: #8e8e93; font-family: inherit; }
-  .body { position: relative; }
-  .line { position: absolute; left: 0; right: 0; align-items: center; color: #d4d4d4; background: #1c1c1e; }
-  .line.alt { background: #202024; }
-  .line.sel { background: #2a5bd7; color: #fff; }
-  .gutter { width: 56px; flex-shrink: 0; padding: 0 8px; text-align: right; color: #6e6e76; border-right: 1px solid #333338; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-end; }
-  .head .gutter { justify-content: flex-start; }
-  .cell { padding: 0 8px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-right: 1px solid #333338; box-sizing: border-box; height: 100%; display: flex; align-items: center; }
-  .cell.num { justify-content: flex-end; }
-  .cell.null { color: #6e6e76; }
-  .line.sel .cell.null { color: #dfe7ff; }
-</style>
+
