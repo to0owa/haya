@@ -390,6 +390,7 @@ fn grid(result: &Arc<QueryResult>, selected: Option<usize>, weak: WeakEntity<DbT
     let widths: Vec<f32> = (0..columns.len()).map(|c| column_width(result, c)).collect();
     let numeric: Vec<bool> = (0..columns.len()).map(|c| is_numeric(result, c)).collect();
     let total = GUTTER_WIDTH + widths.iter().sum::<f32>();
+    let last_column = columns.len().saturating_sub(1);
     let rows = result.clone();
     let body_widths = widths.clone();
 
@@ -403,10 +404,8 @@ fn grid(result: &Arc<QueryResult>, selected: Option<usize>, weak: WeakEntity<DbT
         .text_size(px(12.))
         .text_color(rgb(TEXT_MUTED))
         .child(div().w(px(GUTTER_WIDTH)).flex_shrink_0().border_r_1().border_color(rgb(GRID_BORDER)))
-        .children(columns.iter().zip(&widths).map(|(name, width)| {
-            div()
-                .w(px(*width))
-                .flex_shrink_0()
+        .children(columns.iter().zip(&widths).enumerate().map(|(index, (name, width))| {
+            let cell = div()
                 .px_2()
                 .flex()
                 .items_center()
@@ -414,7 +413,8 @@ fn grid(result: &Arc<QueryResult>, selected: Option<usize>, weak: WeakEntity<DbT
                 .text_ellipsis()
                 .border_r_1()
                 .border_color(rgb(GRID_BORDER))
-                .child(name.clone())
+                .child(name.clone());
+            fill_or_fixed(cell, index == last_column, *width)
         }));
 
     let body = uniform_list(("db-grid", Arc::as_ptr(result) as usize), rows.rows.len(), move |range, _, _| {
@@ -462,8 +462,6 @@ fn grid(result: &Arc<QueryResult>, selected: Option<usize>, weak: WeakEntity<DbT
                     let empty = cell.is_none();
                     let text = cell.clone().unwrap_or_else(|| "NULL".into());
                     let mut cell_el = div()
-                        .w(px(body_widths[column]))
-                        .flex_shrink_0()
                         .px_2()
                         .flex()
                         .items_center()
@@ -477,7 +475,8 @@ fn grid(result: &Arc<QueryResult>, selected: Option<usize>, weak: WeakEntity<DbT
                     if empty && !is_selected {
                         cell_el = cell_el.text_color(rgb(GRID_MUTED));
                     }
-                    line = line.child(cell_el.child(text));
+                    let fixed_width = body_widths[column];
+                    line = line.child(fill_or_fixed(cell_el.child(text), column == last_column, fixed_width));
                 }
                 line
             })
@@ -485,13 +484,35 @@ fn grid(result: &Arc<QueryResult>, selected: Option<usize>, weak: WeakEntity<DbT
     })
     .flex_1();
 
+    // The grid always fills the pane. When the columns are narrower than the pane, the last column grows;
+    // when they are wider, the pane scrolls horizontally.
     div()
         .flex()
         .flex_col()
         .flex_1()
         .min_h_0()
+        .w_full()
         .id(("db-grid-scroll", Arc::as_ptr(result) as usize))
         .overflow_x_scroll()
-        .child(div().w(px(total)).flex().flex_col().flex_1().min_h_0().child(header).child(body))
+        .child(
+            div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_h_0()
+                .w(relative(1.))
+                .min_w(px(total))
+                .child(header)
+                .child(body),
+        )
         .into_any_element()
+}
+
+/// A grid cell that either keeps a fixed width or, for the last column, grows to fill the pane.
+fn fill_or_fixed(cell: Div, grow: bool, width: f32) -> Div {
+    if grow {
+        cell.flex_1().min_w(px(width))
+    } else {
+        cell.w(px(width)).flex_shrink_0()
+    }
 }
