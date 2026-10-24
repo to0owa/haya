@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
+  import { notify, notifyDesktop } from "./notify.svelte";
 
   type Profile = { name: string; dialect: string; host: string; port: number; user: string; database: string };
   type Schema = { name: string; tables: string[] | null; expanded: boolean };
@@ -26,7 +27,6 @@
   let profiles = $state<Profile[]>([]);
   let active = $state<string | null>(null);
   let schemas = $state<Schema[]>([]);
-  let status = $state<string | null>(null);
   let openTerminals = $state(true);
   let openConnections = $state(true);
 
@@ -35,14 +35,15 @@
   });
 
   async function connect(name: string) {
-    status = `Connecting to ${name}…`;
     try {
       const names = await invoke<string[]>("db_connect", { name });
       schemas = names.map((n) => ({ name: n, tables: null, expanded: false }));
       active = name;
-      status = null;
+      notify("success", `Connected to ${name}`);
+      notifyDesktop("Haya", `Connected to ${name}`);
     } catch (error) {
-      status = String(error);
+      notify("error", `${name}: ${error}`);
+      notifyDesktop("Connection failed", `${name}: ${error}`);
     }
   }
 
@@ -109,7 +110,6 @@
                 <span class="side-item-meta">{profile.dialect === "cratedb" ? "CrateDB" : "Postgres"}</span>
               </button>
             {/each}
-            {#if status}<div class="project-empty" class:is-error={status.toLowerCase().includes("error") || status.includes("failed") || status.includes("FATAL")}>{status}</div>{/if}
             {#if active}
               {#each schemas as schema, index (schema.name)}
                 <div class="task-group">

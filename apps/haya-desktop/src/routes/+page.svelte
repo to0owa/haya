@@ -4,6 +4,7 @@
   import Grid from "../haya/Grid.svelte";
   import Sidebar from "../haya/Sidebar.svelte";
   import Inspector from "../haya/Inspector.svelte";
+  import Toasts from "../haya/Toasts.svelte";
 
   type Mode = "expanded" | "compact" | "mini";
   let sidebarWidth = $state(260);
@@ -179,6 +180,8 @@
         </div>
       </main>
     </div>
+
+    <Toasts />
 
     {#if inspectorOpen}
       <SidebarWrapper side="right" bind:width={inspectorWidth} bind:mode={inspectorMode} minWidth={240} maxWidth={420} compactWidth={56}>

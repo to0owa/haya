@@ -55,3 +55,12 @@
 
 /* Haya wordmark: plain text instead of Mestero's logo mask. */
 .haya-wordmark { display: block; width: auto; height: auto; background: none; mask: none; -webkit-mask: none; color: var(--text); font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+
+/* In-app notifications, stacked bottom-right */
+.haya-toasts { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: 50; display: flex; flex-direction: column; gap: var(--space-2); width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.haya-toast { pointer-events: auto; display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--line2, var(--line)); border-left: 3px solid var(--quiet); border-radius: 8px; background: var(--popup); color: var(--text); font-size: 12px; box-shadow: 0 8px 24px #0005; }
+.haya-toast.is-error { border-left-color: var(--red); }
+.haya-toast.is-success { border-left-color: var(--green); }
+.haya-toast-message { flex: 1; min-width: 0; white-space: pre-wrap; word-break: break-word; }
+.haya-toast-close { border: 0; background: transparent; color: var(--quiet); font-size: 14px; line-height: 1; padding: 0 2px; }
+.haya-toast-close:hover { color: var(--text); }
