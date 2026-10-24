@@ -133,12 +133,3 @@
     </div>
   </div>
 </div>
-
-<nav class="subnav" aria-label="Haya views">
-  <button class="subtab" class:active={section === "terminal"} onclick={() => onSection("terminal")}>
-    <span class="subtab-label">Terminal</span>
-  </button>
-  <button class="subtab" class:active={section === "database"} onclick={() => onSection("database")}>
-    <span class="subtab-label">Database</span>
-  </button>
-</nav>
