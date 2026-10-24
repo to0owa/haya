@@ -62,7 +62,7 @@
 
 <div class="side-head">
   <div class="side-head-top">
-    <div class="sidebar-brand" role="img" aria-label="Haya"><span class="haya-wordmark">Haya</span></div>
+    <div class="sidebar-brand" role="img" aria-label={section === "terminal" ? "Terminal" : "Database"}><span class="haya-wordmark">{section === "terminal" ? "Terminal" : "Database"}</span></div>
     <div class="side-head-actions">
       <button class="side-action" title="New terminal" aria-label="New terminal" onclick={onNewTerminal}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
@@ -74,7 +74,8 @@
 <div class="side-scroll">
   <div class="side-list-content">
     <div class="project-list">
-      <div class="project-group" class:selected={section === "terminal"}>
+      {#if section === "terminal"}
+      <div class="project-group selected">
         <button class="project-head" class:selected={section === "terminal"} onclick={() => (openTerminals = !openTerminals)}>
           <span class="project-icon">&gt;_</span>
           <span class="project-name">Terminals</span>
@@ -93,7 +94,8 @@
         {/if}
       </div>
 
-      <div class="project-group" class:selected={section === "database"}>
+      {:else}
+      <div class="project-group selected">
         <button class="project-head" class:selected={section === "database"} onclick={() => (openConnections = !openConnections)}>
           <span class="project-icon">DB</span>
           <span class="project-name">Connections</span>
@@ -130,6 +132,7 @@
           </div>
         {/if}
       </div>
+      {/if}
     </div>
   </div>
 </div>
