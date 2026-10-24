@@ -1,33 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
-  import { notify, notifyDesktop } from "./notify.svelte";
+  import { notify, notifyDesktop } from "../notify.svelte";
+  import { openTable } from "../wm/store.svelte";
 
   type Profile = { name: string; dialect: string; host: string; port: number; user: string; database: string };
   type Schema = { name: string; tables: string[] | null; expanded: boolean };
 
-  let {
-    section,
-    terminals,
-    activeTerminal,
-    onSelectTerminal,
-    onNewTerminal,
-    onOpenTable,
-    onSection,
-  }: {
-    section: "terminal" | "database";
-    terminals: { id: number; title: string }[];
-    activeTerminal: number | null;
-    onSelectTerminal: (id: number) => void;
-    onNewTerminal: () => void;
-    onOpenTable: (schema: string, table: string) => void;
-    onSection: (section: "terminal" | "database") => void;
-  } = $props();
-
   let profiles = $state<Profile[]>([]);
   let active = $state<string | null>(null);
   let schemas = $state<Schema[]>([]);
-  let openTerminals = $state(true);
   let openConnections = $state(true);
 
   onMount(async () => {
@@ -60,43 +42,11 @@
   }
 </script>
 
-<div class="side-head">
-  <div class="side-head-top">
-    <div class="sidebar-brand" role="img" aria-label={section === "terminal" ? "Terminal" : "Database"}><span class="haya-wordmark">{section === "terminal" ? "Terminal" : "Database"}</span></div>
-    <div class="side-head-actions">
-      <button class="side-action" title="New terminal" aria-label="New terminal" onclick={onNewTerminal}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      </button>
-    </div>
-  </div>
-</div>
-
 <div class="side-scroll">
   <div class="side-list-content">
     <div class="project-list">
-      {#if section === "terminal"}
       <div class="project-group selected">
-        <button class="project-head" class:selected={section === "terminal"} onclick={() => (openTerminals = !openTerminals)}>
-          <span class="project-icon">&gt;_</span>
-          <span class="project-name">Terminals</span>
-          <span class="project-count">{terminals.length}</span>
-          <svg class="project-chevron" class:open={openTerminals} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-        </button>
-        {#if openTerminals}
-          <div class="project-tasks">
-            {#each terminals as terminal (terminal.id)}
-              <button class="side-item task-row" class:selected={activeTerminal === terminal.id} onclick={() => onSelectTerminal(terminal.id)}>
-                <span class="task-icon"><span class="task-dot"></span></span>
-                <span class="side-item-title">{terminal.title}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
-
-      {:else}
-      <div class="project-group selected">
-        <button class="project-head" class:selected={section === "database"} onclick={() => (openConnections = !openConnections)}>
+        <button class="project-head selected" onclick={() => (openConnections = !openConnections)}>
           <span class="project-icon">DB</span>
           <span class="project-name">Connections</span>
           <span class="project-count">{profiles.length}</span>
@@ -106,7 +56,7 @@
           <div class="project-tasks">
             {#if profiles.length === 0}<div class="project-empty">No connections yet.</div>{/if}
             {#each profiles as profile (profile.name)}
-              <button class="side-item task-row" class:selected={active === profile.name} onclick={() => { onSection("database"); connect(profile.name); }}>
+              <button class="side-item task-row" class:selected={active === profile.name} onclick={() => connect(profile.name)}>
                 <span class="project-icon small">{initials(profile.name)}</span>
                 <span class="side-item-title">{profile.name}</span>
                 <span class="side-item-meta">{profile.dialect === "cratedb" ? "CrateDB" : "Postgres"}</span>
@@ -121,7 +71,7 @@
                   </button>
                   {#if schema.expanded}
                     {#each schema.tables ?? [] as table (table)}
-                      <button class="side-item task-row table-row" onclick={() => onOpenTable(schema.name, table)}>
+                      <button class="side-item task-row table-row" onclick={() => openTable(schema.name, table)}>
                         <span class="side-item-title">{table}</span>
                       </button>
                     {/each}
@@ -132,7 +82,6 @@
           </div>
         {/if}
       </div>
-      {/if}
     </div>
   </div>
 </div>

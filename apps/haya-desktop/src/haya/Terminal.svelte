@@ -11,6 +11,7 @@
   let fit: FitAddon;
   let id: number | null = null;
   let unlisten: UnlistenFn | undefined;
+  let observer: ResizeObserver | undefined;
 
   function decode(base64: string): Uint8Array {
     const binary = atob(base64);
@@ -37,10 +38,13 @@
     id = await invoke<number>("pty_spawn", { rows: term.rows, cols: term.cols });
     term.onData((data) => invoke("pty_write", { id, data }));
     term.onResize(({ rows, cols }) => invoke("pty_resize", { id, rows, cols }));
-    window.addEventListener("resize", () => fit.fit());
+    // Fit whenever the pane changes size, including when it becomes visible again.
+    observer = new ResizeObserver(() => fit.fit());
+    observer.observe(host);
   });
 
   onDestroy(() => {
+    observer?.disconnect();
     unlisten?.();
     if (id !== null) invoke("pty_close", { id });
     term?.dispose();
