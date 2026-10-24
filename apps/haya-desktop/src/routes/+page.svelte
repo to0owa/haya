@@ -1,16 +1,15 @@
 <script lang="ts">
-  import SidebarWrapper from "../mestero/lib/SidebarWrapper.svelte";
   import Terminal from "../haya/Terminal.svelte";
   import Grid from "../haya/Grid.svelte";
   import Sidebar from "../haya/Sidebar.svelte";
   import Inspector from "../haya/Inspector.svelte";
   import Toasts from "../haya/Toasts.svelte";
 
-  type Mode = "expanded" | "compact" | "mini";
-  let sidebarWidth = $state(260);
-  let sidebarMode = $state<Mode>("expanded");
-  let inspectorWidth = $state(300);
-  let inspectorMode = $state<Mode>("expanded");
+  // Sidebar is either open or closed. No compact or mini mode: the toolbar carries the controls.
+  const SIDEBAR_WIDTH = 260;
+  const INSPECTOR_WIDTH = 300;
+
+  let sidebarOpen = $state(true);
   let inspectorOpen = $state(false);
 
   let section = $state<"terminal" | "database">("terminal");
@@ -22,6 +21,10 @@
   let plusOpen = $state(false);
   let history = $state<number[]>([1]);
   let historyIndex = $state(0);
+
+  let active = $derived(
+    terminals.find((t) => t.id === activeId)?.title ?? tables.find((t) => t.id === activeId)?.title ?? "",
+  );
 
   function focusTab(id: number) {
     if (history[historyIndex] === id) {
@@ -46,23 +49,6 @@
       activeId = history[historyIndex];
     }
   }
-
-  function onKey(event: KeyboardEvent) {
-    if (!(event.metaKey || event.ctrlKey)) return;
-    if (event.key === "t") { event.preventDefault(); newTerminal(); }
-    else if (event.key === "w") { event.preventDefault(); closeTab(activeId); }
-    else if (event.key === "[") { event.preventDefault(); goBack(); }
-    else if (event.key === "]") { event.preventDefault(); goForward(); }
-    else if (event.key === "b") { event.preventDefault(); toggleSidebar(); }
-  }
-
-  function toggleSidebar() {
-    sidebarMode = sidebarMode === "mini" ? "expanded" : "mini";
-  }
-
-  let active = $derived(
-    terminals.find((t) => t.id === activeId)?.title ?? tables.find((t) => t.id === activeId)?.title ?? "",
-  );
 
   function newTerminal() {
     const id = nextId++;
@@ -96,30 +82,54 @@
     historyIndex = Math.min(historyIndex, Math.max(0, history.length - 1));
     if (activeId === id) focusTab(history[historyIndex] ?? terminals[0]?.id ?? tables[0]?.id ?? 0);
   }
+
+  function toggleSidebar() {
+    sidebarOpen = !sidebarOpen;
+  }
+
+  function selectSection(next: "terminal" | "database") {
+    section = next;
+    sidebarOpen = true;
+  }
+
+  function onKey(event: KeyboardEvent) {
+    if (!(event.metaKey || event.ctrlKey)) return;
+    if (event.key === "t") { event.preventDefault(); newTerminal(); }
+    else if (event.key === "w") { event.preventDefault(); closeTab(activeId); }
+    else if (event.key === "[") { event.preventDefault(); goBack(); }
+    else if (event.key === "]") { event.preventDefault(); goForward(); }
+    else if (event.key === "b") { event.preventDefault(); toggleSidebar(); }
+  }
 </script>
 
 <svelte:window onkeydown={onKey} />
 
 <div class="app">
   <div class="haya-titlebar" data-tauri-drag-region></div>
-  <div
-    class="workspace"
-    class:is-sidebar-expanded={sidebarMode === "expanded"}
-    class:is-sidebar-compact={sidebarMode === "compact"}
-    class:is-sidebar-hidden={sidebarMode === "mini"}
-    style={`--sidebar-live-width: ${sidebarWidth}px; --sidebar-progress: ${Math.max(0, Math.min(1, sidebarWidth / 56))}; --inspector-live-width: ${inspectorWidth}px; --inspector-progress: ${Math.max(0, Math.min(1, inspectorWidth / 56))}; --editor-min-width: 360px`}
-  >
-    <SidebarWrapper side="left" bind:width={sidebarWidth} bind:mode={sidebarMode} minWidth={200} maxWidth={360} compactWidth={56}>
-      <Sidebar
-        {section}
-        terminals={terminals}
-        activeTerminal={terminals.some((t) => t.id === activeId) ? activeId : null}
-        onSelectTerminal={(id) => { focusTab(id); section = "terminal"; }}
-        onNewTerminal={newTerminal}
-        onOpenTable={openTable}
-        onSection={(next) => (section = next)}
-      />
-    </SidebarWrapper>
+
+  <div class="workspace">
+    <nav class="haya-rail" aria-label="Sections">
+      <button class="haya-rail-item" class:is-active={section === "terminal"} aria-label="Terminal" title="Terminal" onclick={() => selectSection("terminal")}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6M12 19h8" /></svg>
+      </button>
+      <button class="haya-rail-item" class:is-active={section === "database"} aria-label="Database" title="Database" onclick={() => selectSection("database")}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></svg>
+      </button>
+    </nav>
+
+    {#if sidebarOpen}
+      <aside class="haya-sidebar" style="width: {SIDEBAR_WIDTH}px">
+        <Sidebar
+          {section}
+          terminals={terminals}
+          activeTerminal={terminals.some((t) => t.id === activeId) ? activeId : null}
+          onSelectTerminal={(id) => { focusTab(id); section = "terminal"; }}
+          onNewTerminal={newTerminal}
+          onOpenTable={openTable}
+          onSection={(next) => (section = next)}
+        />
+      </aside>
+    {/if}
 
     <div class="workspace-center" id="workspace-center">
       <main class="main haya-main">
@@ -137,7 +147,7 @@
             </button>
           </div>
           <div class="surface-tools chrome-controls" aria-label="Panels">
-            <button class="chrome-control" aria-label={sidebarMode === "mini" ? "Expand sidebar" : "Collapse sidebar"} aria-pressed={sidebarMode !== "mini"} title="Toggle sidebar (⌘B)" onclick={toggleSidebar}>
+            <button class="chrome-control" aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"} aria-pressed={sidebarOpen} title="Toggle sidebar (⌘B)" onclick={toggleSidebar}>
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g transform="translate(24 0) scale(-1 1)"><path class="panel-icon-fill" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4Z" stroke="none" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></g></svg>
             </button>
             <button class="chrome-control" aria-label={inspectorOpen ? "Close details" : "Open details"} aria-pressed={inspectorOpen} title="Details" onclick={() => (inspectorOpen = !inspectorOpen)}>
@@ -148,7 +158,7 @@
 
         <div class="haya-tabs" role="tablist">
           {#each terminals as terminal (terminal.id)}
-            <button class="haya-tab" role="tab" aria-selected={activeId === terminal.id} onclick={() => { activeId = terminal.id; section = "terminal"; }}>
+            <button class="haya-tab" role="tab" aria-selected={activeId === terminal.id} onclick={() => { focusTab(terminal.id); section = "terminal"; }}>
               {terminal.title}
             </button>
           {/each}
@@ -182,14 +192,14 @@
       </main>
     </div>
 
-    <Toasts />
-
     {#if inspectorOpen}
-      <SidebarWrapper side="right" bind:width={inspectorWidth} bind:mode={inspectorMode} minWidth={240} maxWidth={420} compactWidth={56}>
+      <aside class="haya-inspector" style="width: {INSPECTOR_WIDTH}px">
         <Inspector columns={details?.columns ?? null} row={details?.row ?? null} />
-      </SidebarWrapper>
+      </aside>
     {/if}
   </div>
+
+  <Toasts />
 </div>
 
 <style>
@@ -199,7 +209,6 @@
   .haya-pane.hidden { display: none; }
   .haya-tab-close { margin-left: 6px; color: var(--quiet); }
   .haya-tab-close:hover { color: var(--text); }
-  .side-action.is-on { background: var(--selected); color: var(--text); }
   .haya-plus { position: relative; display: flex; align-items: stretch; }
   .haya-plus-btn { padding: 0 var(--space-2); font-size: 16px; }
   .haya-menu { position: absolute; top: 100%; left: 0; z-index: 10; min-width: 200px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--popup); box-shadow: 0 8px 24px #0006; display: flex; flex-direction: column; }
