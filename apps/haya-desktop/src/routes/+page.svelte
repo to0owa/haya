@@ -101,6 +101,7 @@
 <svelte:window onkeydown={onKey} />
 
 <div class="app">
+  <div class="haya-titlebar" data-tauri-drag-region></div>
   <div
     class="workspace"
     class:is-sidebar-expanded={sidebarMode === "expanded"}
@@ -121,7 +122,7 @@
     </SidebarWrapper>
 
     <div class="workspace-center" id="workspace-center">
-      <main class="main">
+      <main class="main haya-main">
         <section class="surface-head">
           <div class="surface-heading">
             <div class="surface-title">{active}</div>
