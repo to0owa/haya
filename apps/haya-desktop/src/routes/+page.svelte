@@ -18,6 +18,46 @@
   let activeId = $state<number>(1);
   let nextId = 2;
   let details = $state<{ columns: string[]; row: (string | null)[] } | null>(null);
+  let plusOpen = $state(false);
+  let history = $state<number[]>([1]);
+  let historyIndex = $state(0);
+
+  function focusTab(id: number) {
+    if (history[historyIndex] === id) {
+      activeId = id;
+      return;
+    }
+    history = [...history.slice(0, historyIndex + 1), id];
+    historyIndex = history.length - 1;
+    activeId = id;
+  }
+
+  function goBack() {
+    if (historyIndex > 0) {
+      historyIndex -= 1;
+      activeId = history[historyIndex];
+    }
+  }
+
+  function goForward() {
+    if (historyIndex < history.length - 1) {
+      historyIndex += 1;
+      activeId = history[historyIndex];
+    }
+  }
+
+  function onKey(event: KeyboardEvent) {
+    if (!(event.metaKey || event.ctrlKey)) return;
+    if (event.key === "t") { event.preventDefault(); newTerminal(); }
+    else if (event.key === "w") { event.preventDefault(); closeTab(activeId); }
+    else if (event.key === "[") { event.preventDefault(); goBack(); }
+    else if (event.key === "]") { event.preventDefault(); goForward(); }
+    else if (event.key === "b") { event.preventDefault(); toggleSidebar(); }
+  }
+
+  function toggleSidebar() {
+    sidebarMode = sidebarMode === "mini" ? "expanded" : "mini";
+  }
 
   let active = $derived(
     terminals.find((t) => t.id === activeId)?.title ?? tables.find((t) => t.id === activeId)?.title ?? "",
@@ -26,19 +66,20 @@
   function newTerminal() {
     const id = nextId++;
     terminals = [...terminals, { id, title: `Terminal ${terminals.length + 1}` }];
-    activeId = id;
+    focusTab(id);
     section = "terminal";
+    plusOpen = false;
   }
 
   function openTable(schema: string, table: string) {
     const title = `${schema}.${table}`;
     const existing = tables.find((t) => t.title === title);
     if (existing) {
-      activeId = existing.id;
+      focusTab(existing.id);
     } else {
       const id = nextId++;
       tables = [...tables, { id, title, schema, table }];
-      activeId = id;
+      focusTab(id);
     }
     section = "database";
   }
@@ -50,9 +91,13 @@
     } else {
       tables = tables.filter((t) => t.id !== id);
     }
-    if (activeId === id) activeId = terminals[0]?.id ?? tables[0]?.id ?? 0;
+    history = history.filter((h) => h !== id);
+    historyIndex = Math.min(historyIndex, Math.max(0, history.length - 1));
+    if (activeId === id) focusTab(history[historyIndex] ?? terminals[0]?.id ?? tables[0]?.id ?? 0);
   }
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <div class="app">
   <div
@@ -67,7 +112,7 @@
         {section}
         terminals={terminals}
         activeTerminal={terminals.some((t) => t.id === activeId) ? activeId : null}
-        onSelectTerminal={(id) => { activeId = id; section = "terminal"; }}
+        onSelectTerminal={(id) => { focusTab(id); section = "terminal"; }}
         onNewTerminal={newTerminal}
         onOpenTable={openTable}
         onSection={(next) => (section = next)}
@@ -81,9 +126,20 @@
             <div class="surface-title">{active}</div>
             <span class="surface-state">· {section === "terminal" ? "Local shell" : "Database"}</span>
           </div>
-          <div class="surface-actions">
-            <button class="side-action" class:is-on={inspectorOpen} title="Details" aria-label="Toggle details" onclick={() => (inspectorOpen = !inspectorOpen)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2" /><path d="M14 5v14" /></svg>
+          <div class="surface-tools chrome-controls" aria-label="Navigation">
+            <button class="chrome-control" aria-label="Back" title="Back (⌘[)" disabled={historyIndex === 0} onclick={goBack}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+            </button>
+            <button class="chrome-control" aria-label="Forward" title="Forward (⌘])" disabled={historyIndex >= history.length - 1} onclick={goForward}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+            </button>
+          </div>
+          <div class="surface-tools chrome-controls" aria-label="Panels">
+            <button class="chrome-control" aria-label={sidebarMode === "mini" ? "Expand sidebar" : "Collapse sidebar"} aria-pressed={sidebarMode !== "mini"} title="Toggle sidebar (⌘B)" onclick={toggleSidebar}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g transform="translate(24 0) scale(-1 1)"><path class="panel-icon-fill" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4Z" stroke="none" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></g></svg>
+            </button>
+            <button class="chrome-control" aria-label={inspectorOpen ? "Close details" : "Open details"} aria-pressed={inspectorOpen} title="Details" onclick={() => (inspectorOpen = !inspectorOpen)}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="panel-icon-fill" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4Z" stroke="none" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></svg>
             </button>
           </div>
         </section>
@@ -95,11 +151,20 @@
             </button>
           {/each}
           {#each tables as tab (tab.id)}
-            <button class="haya-tab" role="tab" aria-selected={activeId === tab.id} onclick={() => { activeId = tab.id; section = "database"; }}>
+            <button class="haya-tab" role="tab" aria-selected={activeId === tab.id} onclick={() => { focusTab(tab.id); section = "database"; }}>
               {tab.title}
               <span class="haya-tab-close" role="button" tabindex="-1" onclick={(e) => { e.stopPropagation(); closeTab(tab.id); }}>×</span>
             </button>
           {/each}
+          <div class="haya-plus">
+            <button class="haya-tab haya-plus-btn" aria-label="New tab" aria-expanded={plusOpen} onclick={() => (plusOpen = !plusOpen)}>+</button>
+            {#if plusOpen}
+              <div class="haya-menu" role="menu">
+                <button class="haya-menu-item" role="menuitem" onclick={newTerminal}>New Terminal <kbd>⌘T</kbd></button>
+                <button class="haya-menu-item" role="menuitem" disabled>New Query <span class="haya-soon">soon</span></button>
+              </div>
+            {/if}
+          </div>
         </div>
 
         <div class="haya-content">
@@ -131,4 +196,12 @@
   .haya-tab-close { margin-left: 6px; color: var(--quiet); }
   .haya-tab-close:hover { color: var(--text); }
   .side-action.is-on { background: var(--selected); color: var(--text); }
+  .haya-plus { position: relative; display: flex; align-items: stretch; }
+  .haya-plus-btn { padding: 0 var(--space-2); font-size: 16px; }
+  .haya-menu { position: absolute; top: 100%; left: 0; z-index: 10; min-width: 200px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--popup); box-shadow: 0 8px 24px #0006; display: flex; flex-direction: column; }
+  .haya-menu-item { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font-size: 12px; text-align: left; }
+  .haya-menu-item:hover:not(:disabled) { background: var(--hover); }
+  .haya-menu-item:disabled { color: var(--quiet); }
+  .haya-soon { font-size: 10px; color: var(--quiet); }
+  kbd { font: inherit; font-size: 11px; color: var(--quiet); }
 </style>
