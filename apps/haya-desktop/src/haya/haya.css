@@ -277,3 +277,6 @@
 .haya-row-chevron.is-open { transform: rotate(90deg); }
 .haya-row-chevron .haya-icon { width: 12px; height: 12px; }
 .haya-empty { padding: 6px 10px; color: var(--quiet); font-size: 12px; }
+
+/* Body row: left toolbar, left panel, stage, right panel, right toolbar. Lives here, not in a page, so every shell gets it. */
+.haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0; box-sizing: border-box; }
