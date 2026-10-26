@@ -202,8 +202,6 @@
 /* Right panel: mirrors the explorer on the left. Borderless and transparent, beside the stage. */
 
 /* Side toolbars get a little more room than the top bar, for icon breathing space. */
-:root { --haya-edge-btn: 24px; --haya-edge-icon: 15px; }
-.haya-edge svg { width: var(--haya-edge-icon); height: var(--haya-edge-icon); }
 
 /* ---- Toolbar system (single source of truth) ----
    --haya-bar-pad : global toolbar padding. Top and bottom bars use it on the sides;
@@ -215,10 +213,10 @@
 :root {
   --haya-bar-pad: 5px;
   --haya-item-pad: 5px;
-  --haya-btn-h: 22px;
+  --haya-btn-h: 26px;
   --haya-chrome-h: calc(var(--haya-btn-h) + var(--haya-bar-pad) * 2);
   --haya-chrome-font: 11px;
-  --haya-icon: 14px;
+  --haya-icon: 20px;
   --haya-chrome-gap: var(--haya-bar-pad);
   --haya-chrome-pad: var(--haya-bar-pad);
   --haya-btn-pad-x: 10px;      /* horizontal room inside text buttons */
