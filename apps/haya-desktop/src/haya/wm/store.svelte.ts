@@ -24,10 +24,15 @@ export const wm = $state({
   instances: {} as Record<number, Instance>,
   details: null as DetailsRow | null,
   explorerOpen: false,
+  rightOpen: false,
 });
 
 export function toggleExplorer() {
   wm.explorerOpen = !wm.explorerOpen;
+}
+
+export function toggleRight() {
+  wm.rightOpen = !wm.rightOpen;
 }
 
 let terminalCount = 0;
@@ -115,9 +120,10 @@ export function closeFocused() {
   if (focused !== null) close(focused);
 }
 
+/** Details live in the right panel, next to the workspace, rather than as a tile. */
 export function showDetails(columns: string[], row: (string | null)[]) {
   wm.details = { columns, row };
-  open("details");
+  wm.rightOpen = true;
 }
 
 /** Keyboard map in the spirit of dwm. Returns true when the key was handled. */
@@ -143,6 +149,7 @@ export function handleKey(event: KeyboardEvent): boolean {
     "]": () => ratio(0.05),
     "[": () => ratio(-0.05),
     b: toggleExplorer,
+    B: toggleRight,
     "=": () => masters(1),
     "-": () => masters(-1),
   };

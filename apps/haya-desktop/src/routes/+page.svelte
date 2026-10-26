@@ -3,8 +3,9 @@
   import Tiles from "../haya/wm/Tiles.svelte";
   import Bar from "../haya/wm/Bar.svelte";
   import Toasts from "../haya/Toasts.svelte";
-  import { handleKey, snapshot, toggleExplorer, wm } from "../haya/wm/store.svelte";
+  import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
   import Explorer from "../haya/Explorer.svelte";
+  import Details from "../haya/windows/DetailsWindow.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -59,7 +60,17 @@
       <Tiles />
     </div>
 
-    <div class="haya-edge haya-edge-right" aria-label="Right toolbar"></div>
+    <nav class="haya-edge haya-edge-right" aria-label="Right toolbar">
+      <button class="chrome-control" class:is-on={wm.rightOpen} aria-label="Details" aria-pressed={wm.rightOpen} title="Details (⇧⌘B)" onclick={toggleRight}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></svg>
+      </button>
+    </nav>
+
+    {#if wm.rightOpen}
+      <aside class="haya-right" aria-label="Details panel">
+        <Details />
+      </aside>
+    {/if}
   </div>
 
   <!-- Status bar lives in the frame, below the stage, not inside it. -->
@@ -74,5 +85,7 @@
   /* Side toolbars share the chrome thickness: 32px, the same as the titlebar and status bar. */
   .haya-edge-left { width: 32px; padding-top: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .haya-edge-left .chrome-control { width: 24px; height: 24px; min-width: 24px; }
+  .haya-edge-right .chrome-control { width: 24px; height: 24px; min-width: 24px; }
+  .haya-edge-right { width: 32px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .is-on { background: var(--selected); color: var(--text); }
 </style>
