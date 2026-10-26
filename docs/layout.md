@@ -62,3 +62,24 @@ Rules:
 3. One definition per class: component styles live in `haya.css` under their component name.
 4. Inline `style=` only for values computed at render time (tile positions, grid widths).
 5. A file over about 150 lines is split before it grows further.
+
+## Paint layers: who gets a style, who only wraps
+
+One visual surface gets style. Every other layer only places its children and never paints.
+
+**Paints (has background, border, radius, or colour):**
+- `.haya-stage`: the workspace surface (`--panel`, `--haya-radius`).
+- `.wm-window`: the only surface for a window. Owns the 1px border (`--line`, or `--haya-active` when focused), the radius, and the background (`--bg`). Its content is clipped by `overflow: hidden`, so content corners follow the radius without extra rules.
+- `.haya-chrome`: the toolbar band (`--haya-frame`, height, padding).
+- Controls: `.haya-btn`, `.haya-input`, `.haya-tab`, `.haya-select-trigger`.
+
+**Wrappers (layout only, no paint):**
+- `.wm-area`: where tiles are placed. Gaps come from `Tiles.svelte` (`GAP`), never from CSS.
+- `.haya-slot`: `display: contents`, so it has no box of its own.
+- `.terminal`: a sizing wrapper, no paint.
+- `.terminal-screen`: the one allowed exception. It paints `#1E2020` (the xterm theme colour) only to cover the pixels that FitAddon leaves over. It has no radius and no border.
+
+**Rules:**
+1. A new component that needs a surface must reuse one of the paint layers above. Do not add a second card inside a window.
+2. Spacing between items is a token, applied once at the layer that owns the gap. Never inset the same edge in two layers.
+3. A wrapper that needs a border or radius is a sign that it should be the surface instead.

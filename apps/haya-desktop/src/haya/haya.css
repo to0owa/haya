@@ -138,7 +138,7 @@
 .app, .haya-titlebar, .haya-bar-bottom, .haya-edge { background: var(--haya-frame); }
 .haya-titlebar { border-bottom: 0; }
 .haya-bar-bottom { background: var(--haya-frame); border: 0; }
-.haya-stage { background: var(--haya-stage); border: 0; border-radius: var(--haya-radius); }
+.haya-stage { background: var(--haya-stage); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: var(--haya-radius); }
 
 /* Compact chrome: titlebar 32px, status bar 22px, controls 20px. */
 .haya-titlebar { height: 32px; padding-left: 0; padding-right: 6px; }
@@ -362,8 +362,10 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 /* ---- Window frame: one element per window. The border shows which window is active. ----
    overflow: hidden clips content to the border's inner edge, so the content's corners follow the radius automatically. */
 :root { --haya-active: var(--amber); }
-.wm-window { position: absolute; overflow: hidden; border: 1px solid transparent; border-radius: var(--haya-radius); background: var(--bg); }
-.wm-window.is-focused { border-color: color-mix(in srgb, var(--haya-active) 45%, transparent); }
+.wm-window { position: absolute; overflow: hidden; border: 0; border-radius: var(--haya-radius); background: var(--bg); }
+/* The active line is an overlay drawn above the content, so the terminal cannot cover it.
+   Absolute and pointer-free: it never changes layout, so the window does not shift. */
+.wm-window.is-focused::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--haya-active); border-radius: inherit; pointer-events: none; z-index: 1; }
 
 /* ---- Command palette ---- */
 .haya-palette-scrim { position: fixed; inset: 0; z-index: 65; display: flex; justify-content: center; align-items: flex-start; padding-top: 14vh; background: #0006; }
@@ -438,3 +440,23 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 /* Status text can shrink and truncate, so a fill spacer has free space to take. */
 .haya-status-kind, .haya-status-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1; }
 .haya-status-kind { flex-shrink: 0; }
+
+/* ---- Overflow: items that do not fit in a bar, shown in a popover from the "⋯" button ---- */
+.haya-more { display: inline-flex; align-items: center; flex-shrink: 0; }
+.haya-overflow { position: fixed; z-index: 80; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: min(520px, 90vw); padding: 6px; border: 1px solid var(--line2); border-radius: 12px; corner-shape: squircle; background: var(--popup); box-shadow: 0 12px 32px #0006; }
+.haya-overflow-item { display: inline-flex; align-items: center; }
+
+
+
+/* The bar must shrink to the window. Without this, a flex child keeps its content width and pushes past the edge. */
+/* Top bar sits in a row, so it takes the free width. The bottom bar sits in a column: it must keep its height. */
+.haya-titlebar > .haya-chrome-top { min-width: 0; flex: 1 1 0; width: auto; max-width: 100%; }
+.haya-chrome-bottom { min-width: 0; width: 100%; max-width: 100%; flex: none; }
+
+
+/* A slot is a layout-transparent wrapper, so its widget or spacer is a direct flex item of the bar. */
+.haya-slot { display: contents; }
+
+/* The top bar's own padding is the only right inset, so its last button centres on the same line as the side toolbars. */
+.haya-titlebar { padding-right: 0; }
+

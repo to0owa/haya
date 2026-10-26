@@ -11,21 +11,36 @@
   // Gap between windows and between windows and the stage edge.
   const GAP = 2;
 
-  /** Shrinks a tile by half the gap on every side. The area is pre-shrunk by half the gap, so neighbours and the stage edge are both GAP apart. */
-  function inset(rect: Rect): Rect {
+  /**
+   * Shrinks a tile by half the gap on each side that faces another tile, so neighbours are GAP apart.
+   * A side that lies on the area's edge is not shrunk: the tile meets the stage edge with no gap.
+   */
+  function inset(rect: Rect, area: Rect): Rect {
     const h = GAP / 2;
-    return { x: rect.x + h, y: rect.y + h, w: Math.max(0, rect.w - GAP), h: Math.max(0, rect.h - GAP) };
+    const eps = 0.5;
+    const left = rect.x <= area.x + eps ? 0 : h;
+    const top = rect.y <= area.y + eps ? 0 : h;
+    const right = rect.x + rect.w >= area.x + area.w - eps ? 0 : h;
+    const bottom = rect.y + rect.h >= area.y + area.h - eps ? 0 : h;
+    return {
+      x: rect.x + left,
+      y: rect.y + top,
+      w: Math.max(0, rect.w - left - right),
+      h: Math.max(0, rect.h - top - bottom),
+    };
   }
 
   let width = $state(0);
   let height = $state(0);
+
+  const area = $derived<Rect>({ x: 0, y: 0, w: Math.max(0, width), h: Math.max(0, height) });
 
   const tiles = $derived(
     computeTiles({
       workspace: activeWorkspace(wm.config),
       kinds: wm.config.windows,
       rules: wm.config.rules,
-      area: { x: GAP / 2, y: GAP / 2, w: Math.max(0, width - GAP), h: Math.max(0, height - GAP) } satisfies Rect,
+      area,
     }),
   );
 
@@ -33,7 +48,7 @@
   const placement = $derived.by(() => {
     const map: Record<number, Rect> = {};
     for (const tile of tiles) {
-      if (tile.active !== null) map[tile.active] = inset(tile.rect);
+      if (tile.active !== null) map[tile.active] = inset(tile.rect, area);
     }
     return map;
   });
