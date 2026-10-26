@@ -142,3 +142,6 @@
 .wm-tabs { padding: 0 var(--space-2); border-bottom: 1px solid var(--line); }
 .wm-window { margin-top: 0; }
 .wm-window.is-focused { border-color: var(--line2, var(--line)); }
+
+/* The titlebar is chrome, not text: no text selection when dragging or clicking it. */
+.haya-titlebar, .haya-titlebar * { user-select: none; -webkit-user-select: none; }
