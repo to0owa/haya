@@ -214,13 +214,14 @@
    Change --haya-bar-pad or --haya-btn-h and every toolbar follows. */
 :root {
   --haya-bar-pad: 8px;
-  --haya-item-pad: 4px;
+  --haya-item-pad: 8px;
   --haya-btn-h: 24px;
   --haya-chrome-h: calc(var(--haya-btn-h) + var(--haya-bar-pad) * 2);
   --haya-chrome-font: 11px;
   --haya-icon: 15px;
-  --haya-chrome-gap: 6px;
+  --haya-chrome-gap: 12px;
   --haya-chrome-pad: var(--haya-bar-pad);
+  --haya-btn-pad-x: 10px;      /* horizontal room inside text buttons */
 }
 
 .haya-titlebar, .haya-bar-top, .haya-bar-bottom { height: var(--haya-chrome-h); font-size: var(--haya-chrome-font); }
@@ -246,7 +247,7 @@
 .haya-btn:disabled { opacity: .38; }
 .haya-btn.is-on { background: var(--selected); color: var(--text); }
 .haya-btn-icon { width: var(--haya-btn-h); min-width: var(--haya-btn-h); padding: 0; }
-.haya-btn-text { padding: 0 8px; border: 1px solid var(--line); }
+.haya-btn-text { padding: 0 var(--haya-btn-pad-x); border: 1px solid var(--line); }
 .haya-btn-chip { min-width: var(--haya-btn-h); padding: 0 6px; color: var(--quiet); }
 .haya-btn-chip.is-on { color: var(--text); }
 
