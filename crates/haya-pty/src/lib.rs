@@ -25,6 +25,12 @@ impl PtySession {
 
         let mut command = CommandBuilder::new(shell);
         command.env("TERM", "xterm-256color");
+        // A herdr started from here would detect the parent herdr and refuse to run. Drop its variables.
+        for (key, _) in std::env::vars() {
+            if key.starts_with("HERDR_") {
+                command.env_remove(&key);
+            }
+        }
         let mut child = pair.slave.spawn_command(command).context("spawn shell failed")?;
         // The child owns the slave end now; dropping ours lets reads see EOF on exit.
         drop(pair.slave);

@@ -16,7 +16,7 @@ export const HAYA_DARK: Theme = {
   id: "haya-dark",
   name: "Haya Dark",
   mode: "dark",
-  swatches: ["#181a1c", "#e7edf5", "#d9b274", "#86c79a"],
+  swatches: ["#181a1c", "#e7edf5", "#e8b84a", "#86c79a"],
   tokens: {
     "--bg": "#181a1c",
     "--chrome": "#1f2226",
@@ -32,7 +32,7 @@ export const HAYA_DARK: Theme = {
     "--accent": "#e7edf5",
     "--green": "#86c79a",
     "--blue": "#8fb4e3",
-    "--amber": "#d9b274",
+    "--amber": "#e8b84a",
     "--red": "#e08a80",
     "--hover": "#242a31",
     "--selected": "#2b333b",
@@ -40,6 +40,10 @@ export const HAYA_DARK: Theme = {
     "--popup": "#1c2024",
     "--control": "#14171a",
     "--topbar": "#181a1c",
+    "--terminal-bg": "#1e2020",
+    "--terminal-fg": "#e6e9e1",
+    "--terminal-cursor": "#e5e9df",
+    "--terminal-selection": "#303b37",
   },
 };
 
@@ -47,30 +51,35 @@ export const HAYA_LIGHT: Theme = {
   id: "haya-light",
   name: "Haya Light",
   mode: "light",
-  swatches: ["#eef0f3", "#1d2227", "#9a6b12", "#2f8a52"],
+  swatches: ["#f3f4f6", "#1f2429", "#c2880a", "#2f8a52"],
+  // Neutral greys with a faint cool tint. Adjacent layers differ by a few points, so edges blend softly.
   tokens: {
-    "--bg": "#eef0f3",
-    "--chrome": "#f6f7f9",
-    "--sidebar": "#f6f7f9",
-    "--panel": "#e4e7eb",
-    "--raised": "#ffffff",
-    "--line": "#d5dae0",
-    "--line2": "#c4cbd3",
-    "--text": "#1d2227",
-    "--text-strong": "#15191d",
-    "--muted": "#5b6570",
-    "--quiet": "#8a939d",
-    "--accent": "#1d2227",
+    "--bg": "#f7f8fa",
+    "--chrome": "#f3f4f6",
+    "--sidebar": "#f3f4f6",
+    "--panel": "#eceef1",
+    "--raised": "#fbfcfd",
+    "--line": "#e2e6eb",
+    "--line2": "#d3d9e0",
+    "--text": "#1f2429",
+    "--text-strong": "#171b1f",
+    "--muted": "#5d6670",
+    "--quiet": "#8b94a0",
+    "--accent": "#1f2429",
     "--green": "#2f8a52",
     "--blue": "#2f6fb0",
-    "--amber": "#9a6b12",
+    "--amber": "#c2880a",
     "--red": "#b8453a",
-    "--hover": "#e4e8ed",
-    "--selected": "#d9dee5",
-    "--soft": "#f1f3f6",
-    "--popup": "#ffffff",
+    "--hover": "#e7eaee",
+    "--selected": "#dde2e8",
+    "--soft": "#f0f2f5",
+    "--popup": "#fdfdfe",
     "--control": "#ffffff",
-    "--topbar": "#eef0f3",
+    "--topbar": "#f3f4f6",
+    "--terminal-bg": "#fbfcfd",
+    "--terminal-fg": "#1f2429",
+    "--terminal-cursor": "#1f2429",
+    "--terminal-selection": "#dde2e8",
   },
 };
 
@@ -81,4 +90,52 @@ export const DEFAULT_THEME_ID = HAYA_DARK.id;
 
 export function findTheme(id: string | null | undefined): Theme {
   return THEMES.find((theme) => theme.id === id) ?? HAYA_DARK;
+}
+
+/**
+ * ANSI colours for terminals on a light background. xterm's defaults assume a dark background, where "white"
+ * is light. On a light background those same codes turn invisible, so white becomes a mid grey.
+ */
+export const ANSI_LIGHT: Record<string, string> = {
+  black: "#1f2429",
+  red: "#b8453a",
+  green: "#2f8a52",
+  yellow: "#a06f16",
+  blue: "#2f6fb0",
+  magenta: "#8a4fb0",
+  cyan: "#1f7f8a",
+  white: "#4b5560",
+  brightBlack: "#8b94a0",
+  brightRed: "#c9554a",
+  brightGreen: "#37a064",
+  brightYellow: "#b8820f",
+  brightBlue: "#3a7fc4",
+  brightMagenta: "#9b62c2",
+  brightCyan: "#2a909c",
+  brightWhite: "#2b333b",
+};
+
+/**
+ * Extended 256-colour palette for a light background (indices 16–255). The colour cube (16–230) is unchanged,
+ * so coloured text keeps its colours. The white and grey entries (231 and the 232–255 ramp) are inverted,
+ * so "white" text becomes dark and "dim" text stays dim, as in any light terminal.
+ */
+export function extendedAnsiLight(): string[] {
+  const LEVELS = [0, 95, 135, 175, 215, 255];
+  const hex = (v: number) => v.toString(16).padStart(2, "0");
+  const rgb = (r: number, g: number, b: number) => `#${hex(r)}${hex(g)}${hex(b)}`;
+  const out: string[] = [];
+  for (let i = 16; i <= 255; i++) {
+    if (i === 231) {
+      out.push("#2b333b");
+    } else if (i >= 232) {
+      const v = 8 + 10 * (i - 232);
+      const inv = 246 - v;
+      out.push(rgb(inv, inv, inv));
+    } else {
+      const n = i - 16;
+      out.push(rgb(LEVELS[Math.floor(n / 36)], LEVELS[Math.floor((n % 36) / 6)], LEVELS[n % 6]));
+    }
+  }
+  return out;
 }

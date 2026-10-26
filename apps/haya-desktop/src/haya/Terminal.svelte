@@ -6,6 +6,8 @@
   import { FitAddon } from "@xterm/addon-fit";
   import { WebglAddon } from "@xterm/addon-webgl";
   import { hideRenderer, showRenderer, type Renderer } from "./terminal-pool";
+  import { themeState } from "./theme/theme.svelte";
+  import { ANSI_LIGHT, extendedAnsiLight } from "./theme/themes";
   import "@xterm/xterm/css/xterm.css";
 
   let host: HTMLDivElement;
@@ -41,6 +43,20 @@
 
   const renderer: Renderer = { activate: enableWebgl, deactivate: disableWebgl };
 
+  // Colours come from the theme tokens, so the terminal follows Dark and Light.
+  function termTheme() {
+    const css = getComputedStyle(document.documentElement);
+    const read = (name: string) => css.getPropertyValue(name).trim();
+    const base = {
+      background: read("--terminal-bg"),
+      foreground: read("--terminal-fg"),
+      cursor: read("--terminal-cursor"),
+      selectionBackground: read("--terminal-selection"),
+    };
+    // Light backgrounds need their own ANSI palette, so "white" text stays readable.
+    return document.documentElement.dataset.theme === "light" ? { ...base, ...ANSI_LIGHT, extendedAnsi: extendedAnsiLight() } : base;
+  }
+
   function decode(base64: string): Uint8Array {
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
@@ -53,7 +69,14 @@
       fontFamily: "Menlo, monospace",
       fontSize: 13,
       cursorBlink: true,
-      theme: { background: "#1E2020", foreground: "#e6e9e1", cursor: "#e5e9df", selectionBackground: "#303b37" },
+      theme: termTheme(),
+    });
+    // Re-read the tokens whenever the theme changes.
+    // Re-read the tokens whenever the theme changes.
+    $effect(() => {
+      void themeState.id;
+      if (!term) return;
+      term.options.theme = termTheme();
     });
     fit = new FitAddon();
     term.loadAddon(fit);
@@ -94,5 +117,5 @@
 <style>
   /* Fills the window. Its colour matches the xterm theme, so the pixels FitAddon leaves over stay invisible. */
   .terminal { height: 100%; width: 100%; }
-  .terminal-screen { height: 100%; width: 100%; overflow: hidden; background: #1E2020; }
+  .terminal-screen { height: 100%; width: 100%; overflow: hidden; background: transparent; }
 </style>

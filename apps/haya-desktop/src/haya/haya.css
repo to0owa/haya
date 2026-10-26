@@ -362,7 +362,7 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 /* ---- Window frame: one element per window. The border shows which window is active. ----
    overflow: hidden clips content to the border's inner edge, so the content's corners follow the radius automatically. */
 :root { --haya-active: var(--amber); }
-.wm-window { position: absolute; overflow: hidden; border: 0; border-radius: var(--haya-radius); background: var(--bg); }
+.wm-window { position: absolute; overflow: hidden; border: 0; border-radius: var(--haya-radius); background: var(--bg); clip-path: inset(0 round var(--haya-radius)); }
 /* The active line is an overlay drawn above the content, so the terminal cannot cover it.
    Absolute and pointer-free: it never changes layout, so the window does not shift. */
 .wm-window.is-focused::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--haya-active); border-radius: inherit; pointer-events: none; z-index: 1; }
@@ -460,3 +460,15 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 /* The top bar's own padding is the only right inset, so its last button centres on the same line as the side toolbars. */
 .haya-titlebar { padding-right: 0; }
 
+
+
+/* A terminal window paints the terminal colour itself. FitAddon leaves a few pixels at the right and bottom,
+   and this colour covers them. The window clip still rounds the corners, so nothing leaks past the frame. */
+.wm-window:has(.terminal-screen) { background: var(--terminal-bg); }
+
+.wm-window { isolation: isolate; }
+
+
+/* WebKit clips composited children (the xterm WebGL canvas) only when the rounded box is itself a mask and layer.
+   Without this, the canvas paints past the corner. */
+.wm-window:has(.terminal-screen) { -webkit-mask-image: -webkit-radial-gradient(white, black); transform: translateZ(0); }

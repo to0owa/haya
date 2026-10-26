@@ -22,12 +22,12 @@
     const top = rect.y <= area.y + eps ? 0 : h;
     const right = rect.x + rect.w >= area.x + area.w - eps ? 0 : h;
     const bottom = rect.y + rect.h >= area.y + area.h - eps ? 0 : h;
-    return {
-      x: rect.x + left,
-      y: rect.y + top,
-      w: Math.max(0, rect.w - left - right),
-      h: Math.max(0, rect.h - top - bottom),
-    };
+    // Snap to whole pixels. A fractional edge leaves a half-lit column of the window colour outside the frame.
+    const x = Math.round(rect.x + left);
+    const y = Math.round(rect.y + top);
+    const right2 = Math.round(rect.x + rect.w - right);
+    const bottom2 = Math.round(rect.y + rect.h - bottom);
+    return { x, y, w: Math.max(0, right2 - x), h: Math.max(0, bottom2 - y) };
   }
 
   let width = $state(0);
