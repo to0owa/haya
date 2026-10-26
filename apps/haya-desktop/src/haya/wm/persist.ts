@@ -3,6 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { normalize } from "./model";
 import { hydrate, type Instance, snapshot, ensureDefaultWindows } from "./store.svelte";
+import { notify } from "../notify.svelte";
 
 interface Saved {
   config: unknown;
@@ -28,6 +29,11 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 export function scheduleSave() {
   clearTimeout(timer);
   timer = setTimeout(() => {
-    invoke("workspaces_save", { json: snapshot() }).catch(() => {});
+    // A failed save must be visible, otherwise later changes look saved when they are not.
+    try {
+      invoke("workspaces_save", { json: snapshot() }).catch((error) => notify("error", `Could not save layout: ${error}`));
+    } catch (error) {
+      notify("error", `Could not save layout: ${error}`);
+    }
   }, 400);
 }

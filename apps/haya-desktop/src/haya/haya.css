@@ -198,6 +198,7 @@
    Change --haya-bar-pad or --haya-btn-h and every toolbar follows. */
 :root {
   --haya-bar-pad: 4px;
+  --haya-edge-gap: 4px;        /* space between items in a side toolbar */
   --haya-traffic-w: 76px;      /* reserved corner for the native window buttons; nothing else goes here */
   --haya-frame-gap: 6px;       /* space between the top toolbar and the body (side toolbars and stage) */
   --haya-item-pad: 4px;
@@ -205,7 +206,7 @@
   --haya-chrome-h: calc(var(--haya-btn-h) + var(--haya-bar-pad) * 2);
   --haya-chrome-font: 11px;
   --haya-icon: 16px;
-  --haya-chrome-gap: var(--haya-bar-pad);
+  --haya-chrome-gap: var(--haya-edge-gap);
   --haya-chrome-pad: var(--haya-bar-pad);
   --haya-btn-pad-x: 10px;      /* horizontal room inside text buttons */
 }
@@ -214,7 +215,7 @@
 .haya-bar-top, .haya-bar-bottom { padding: 0 var(--haya-bar-pad); gap: var(--haya-chrome-gap); }
 .haya-titlebar { padding-right: var(--haya-bar-pad); }
 
-.haya-edge-left, .haya-edge-right { width: var(--haya-chrome-h); padding: var(--haya-bar-pad) 0; gap: 0; }
+.haya-edge-left, .haya-edge-right { width: var(--haya-chrome-h); padding: var(--haya-bar-pad) 0; gap: var(--haya-edge-gap); }
 
 
 .haya-titlebar svg, .haya-edge svg, .haya-bar svg { width: var(--haya-icon); height: var(--haya-icon); }
@@ -222,13 +223,13 @@
 /* ---- Chrome components: every band and control uses these classes ---- */
 .haya-chrome { display: flex; align-items: center; box-sizing: border-box; background: var(--haya-frame); font-size: var(--haya-chrome-font); color: var(--quiet); }
 .haya-chrome-top, .haya-chrome-bottom { height: var(--haya-chrome-h); width: 100%; padding: 0 var(--haya-bar-pad); gap: var(--haya-chrome-gap); }
-.haya-chrome-left, .haya-chrome-right { width: var(--haya-chrome-h); height: 100%; flex-direction: column; justify-content: flex-start; padding: var(--haya-bar-pad) 0; gap: 0; }
+.haya-chrome-left, .haya-chrome-right { width: var(--haya-chrome-h); height: 100%; flex-direction: column; justify-content: flex-start; padding: var(--haya-bar-pad) 0; gap: var(--haya-edge-gap); }
 .haya-chrome-left .haya-chrome-btn, .haya-chrome-right .haya-chrome-btn { margin: var(--haya-item-pad) 0; }
 
 /* ---- Component classes (one definition each) ---- */
 .haya-icon { width: var(--haya-icon); height: var(--haya-icon); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-.haya-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--haya-btn-h); border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: var(--haya-chrome-font); white-space: nowrap; }
+.haya-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--haya-btn-h); border: 0; border-radius: 10px; corner-shape: squircle; background: transparent; color: var(--muted); font-size: var(--haya-chrome-font); white-space: nowrap; }
 .haya-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
 .haya-btn:disabled { opacity: .38; }
 .haya-btn.is-on { background: var(--selected); color: var(--text); }
@@ -306,13 +307,13 @@
 .haya-spacer { flex: none; }
 .haya-spacer-y { height: var(--haya-frame-gap); width: 100%; }
 .haya-spacer-x { width: var(--haya-frame-gap); height: 100%; }
-.haya-spacer.is-fill { flex: 1 1 auto; min-width: 0; width: auto; height: auto; }
+.haya-spacer.is-fill { flex: 1 1 auto; min-width: 24px; min-height: 24px; width: auto; height: auto; }
 
 /* ---- Tab strip (in the top toolbar, one list per workspace) ---- */
 :root { --haya-tab-min: 96px; --haya-tab-max: 180px; }
-.haya-bar-tabs { display: flex; flex: 1; min-width: 0; }
-.haya-tabstrip { display: flex; align-items: center; flex: 1; min-width: 0; gap: var(--haya-item-pad); }
-.haya-tabstrip-scroll { display: flex; flex: 1; min-width: 0; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.haya-bar-tabs { display: flex; flex: 0 1 auto; min-width: 0; }
+.haya-tabstrip { display: flex; align-items: center; flex: 0 1 var(--haya-tabs-w); width: var(--haya-tabs-w); min-width: 0; gap: var(--haya-edge-gap); }
+.haya-tabstrip-scroll { display: flex; flex: 1; min-width: 0; gap: var(--haya-edge-gap); overflow-x: auto; scrollbar-width: none; }
 .haya-tabstrip-scroll::-webkit-scrollbar { display: none; }
 .haya-tab { display: inline-flex; flex: 1 1 0; align-items: center; gap: 6px; min-width: var(--haya-tab-min); max-width: var(--haya-tab-max); height: var(--haya-btn-h); padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: var(--haya-chrome-font); cursor: pointer; white-space: nowrap; }
 .haya-tab:hover { background: var(--hover); color: var(--text); }
@@ -334,7 +335,7 @@
 .haya-bar-hit { display: contents; }
 
 /* ---- Context menu ---- */
-.haya-menu { position: fixed; z-index: 70; min-width: 200px; padding: 6px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); box-shadow: 0 12px 32px #0006; }
+.haya-menu { position: fixed; z-index: 80; min-width: 200px; padding: 6px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); box-shadow: 0 12px 32px #0006; }
 .haya-menu-title { padding: 4px 8px 6px; color: var(--text-strong); font-size: 12px; font-weight: 600; }
 .haya-menu-section { padding: 8px 8px 2px; color: var(--quiet); font-size: 11px; }
 .haya-menu-item { display: flex; align-items: center; gap: var(--haya-chrome-gap); width: 100%; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
@@ -361,8 +362,8 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 /* ---- Window frame: one element per window. The border shows which window is active. ----
    overflow: hidden clips content to the border's inner edge, so the content's corners follow the radius automatically. */
 :root { --haya-active: var(--amber); }
-.wm-window { position: absolute; overflow: hidden; border: 1px solid transparent; border-radius: var(--haya-radius); background: var(--haya-window); }
-.wm-window.is-focused { border-color: var(--haya-active); }
+.wm-window { position: absolute; overflow: hidden; border: 1px solid transparent; border-radius: var(--haya-radius); background: var(--bg); }
+.wm-window.is-focused { border-color: color-mix(in srgb, var(--haya-active) 45%, transparent); }
 
 /* ---- Command palette ---- */
 .haya-palette-scrim { position: fixed; inset: 0; z-index: 65; display: flex; justify-content: center; align-items: flex-start; padding-top: 14vh; background: #0006; }
@@ -373,3 +374,67 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 .haya-palette-item.is-on { background: var(--selected); color: var(--text); }
 .haya-palette-item kbd { color: var(--quiet); font-family: inherit; font-size: 11px; white-space: nowrap; }
 .haya-palette-empty { padding: 12px 10px; color: var(--quiet); font-size: 12px; }
+
+/* Test: squircle corners on toolbar buttons. Where corner-shape is unsupported, the browser uses a plain radius. */
+
+/* ---- Brand mark (placeholder until the final logo) ---- */
+.haya-logo { display: inline-flex; align-items: center; gap: 6px; height: var(--haya-btn-h); color: var(--text-strong); white-space: nowrap; }
+.haya-logo-mark { display: block; width: var(--haya-btn-h); height: var(--haya-btn-h); flex-shrink: 0; vertical-align: middle; }
+.haya-logo-word { font-size: 13px; font-weight: 650; letter-spacing: -.02em; line-height: 1; }
+
+/* ---- Connections: header with an add button, and the new-connection form ---- */
+.haya-conn-head { display: flex; align-items: center; gap: var(--haya-item-pad); padding-right: var(--space-2); }
+.haya-conn-head > :first-child { flex: 1; min-width: 0; }
+.haya-form { display: flex; flex-direction: column; gap: 10px; padding: var(--space-2) var(--space-3); }
+.haya-form-row { display: flex; flex-direction: column; gap: 4px; }
+.haya-form-label { color: var(--quiet); font-size: 11px; }
+.haya-input { height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 10px; corner-shape: squircle; background: var(--soft); color: var(--text); font-size: 12px; outline: none; }
+.haya-input:focus { border-color: var(--line2); }
+.haya-form-options { display: flex; gap: 4px; }
+.haya-form-actions { display: flex; justify-content: flex-end; gap: 6px; padding-top: 4px; }
+
+/* ---- Select: dropdown with a list of rows ---- */
+.haya-select { position: relative; }
+.haya-select-trigger, .haya-select-item { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; text-align: left; color: var(--text); font-size: 12px; }
+.haya-select-trigger { height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 10px; corner-shape: squircle; background: var(--soft); }
+.haya-select-trigger svg { margin-left: auto; width: 12px; height: 12px; color: var(--quiet); }
+.haya-select-list { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0; display: flex; flex-direction: column; gap: 2px; padding: 4px; border: 1px solid var(--line2); border-radius: 12px; corner-shape: squircle; background: var(--popup); box-shadow: 0 12px 32px #0006; }
+.haya-select-item { height: 30px; padding: 0 8px; border-radius: 8px; corner-shape: squircle; background: transparent; color: var(--muted); }
+.haya-select-item:hover { background: var(--hover); color: var(--text); }
+.haya-select-item.is-on { background: var(--selected); color: var(--text); }
+.haya-select-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haya-select-hint { color: var(--quiet); font-size: 11px; }
+.haya-select-badge { display: grid; place-items: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px; corner-shape: squircle; background: var(--selected); color: var(--amber); font-size: 9px; font-weight: 700; letter-spacing: .02em; }
+
+.haya-select-divider { height: 1px; margin: 4px 0; background: var(--line); }
+.haya-select-action { color: var(--muted); }
+
+
+/* ---- Toolbar edit mode: each item gets a floating badge at its top-left corner ---- */
+.haya-edit-badge { position: absolute; left: -6px; top: -9px; z-index: 5; display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 4px; border-radius: 6px; background: var(--popup); border: 1px solid var(--line2); color: var(--text); font-size: 10px; white-space: nowrap; box-shadow: 0 4px 12px #0005; cursor: grab; user-select: none; touch-action: none; }
+.haya-edit-grip { color: var(--amber); font-size: 11px; line-height: 1; }
+.haya-drag-ghost { position: fixed; z-index: 80; pointer-events: none; padding: 3px 8px; border-radius: 6px; background: var(--popup); color: var(--text); font-size: 11px; box-shadow: 0 8px 24px #0006; }
+.haya-edit-bar { position: fixed; z-index: 75; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); color: var(--muted); font-size: 11px; box-shadow: 0 12px 32px #0006; }
+.haya-edit-hint { padding: 0 4px; }
+
+/* Drop preview: a line where the dragged item would land, and the source item dims while it moves. */
+.haya-drop-line { position: fixed; z-index: 76; pointer-events: none; border-radius: 2px; background: var(--amber); box-shadow: 0 0 0 2px #0003; }
+
+/* Edit mode overlay: outlines and badges drawn over measured slots, so the layout never changes. */
+.haya-edit-box { position: fixed; z-index: 74; pointer-events: none; outline: 1px dashed var(--amber); outline-offset: 2px; border-radius: 6px; }
+.haya-edit-box.is-hidden { opacity: .4; }
+.haya-edit-box.is-dragging { opacity: .35; }
+.haya-edit-box .haya-edit-badge { position: absolute; left: -6px; top: -9px; pointer-events: auto; }
+
+/* The spacer size menu must sit above the edit bar, so its controls stay usable. */
+.haya-spacer-menu { z-index: 80; }
+
+/* Default layout is left-aligned. The tab strip has a set width; a spacer is what pushes items to the far side. */
+:root { --haya-tabs-w: 480px; }
+
+/* "+" that sits at the end of each bar in edit mode. */
+.haya-add-anchor { position: fixed; z-index: 74; }
+
+/* Status text can shrink and truncate, so a fill spacer has free space to take. */
+.haya-status-kind, .haya-status-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1; }
+.haya-status-kind { flex-shrink: 0; }

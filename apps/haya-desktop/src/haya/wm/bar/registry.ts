@@ -8,8 +8,15 @@ import ConfigButton from "./widgets/ConfigButton.svelte";
 import WindowTabs from "./widgets/WindowTabs.svelte";
 import ShortcutsButton from "./widgets/ShortcutsButton.svelte";
 import CommandButton from "../../commands/CommandButton.svelte";
+import ExplorerToggle from "./widgets/ExplorerToggle.svelte";
+import LogoWidget from "./widgets/LogoWidget.svelte";
+import ConnectionsToggle from "./widgets/ConnectionsToggle.svelte";
+import DetailsToggle from "./widgets/DetailsToggle.svelte";
+import LeftLayoutToggle from "./widgets/LeftLayoutToggle.svelte";
+import RightLayoutToggle from "./widgets/RightLayoutToggle.svelte";
+import SpacerWidget from "./widgets/SpacerWidget.svelte";
 
-export type BarPosition = "top" | "bottom";
+export type BarPosition = "top" | "bottom" | "left" | "right";
 
 export const WIDGETS = {
   workspaces: WorkspaceSwitch,
@@ -21,7 +28,18 @@ export const WIDGETS = {
   theme: ThemeToggle,
   shortcuts: ShortcutsButton,
   commands: CommandButton,
+  explorer: ExplorerToggle,
+  logo: LogoWidget,
+  connections: ConnectionsToggle,
+  details: DetailsToggle,
+  layoutLeft: LeftLayoutToggle,
+  layoutRight: RightLayoutToggle,
+  spacer: SpacerWidget,
 } as const;
+
+export function isWidget(id: string): id is WidgetId {
+  return id in WIDGETS;
+}
 
 export type WidgetId = keyof typeof WIDGETS;
 
@@ -36,6 +54,13 @@ export const WIDGET_LABELS: Record<WidgetId, string> = {
   theme: "Color theme",
   shortcuts: "Keyboard shortcuts",
   commands: "Command palette",
+  explorer: "Explorer",
+  logo: "Logo",
+  connections: "Connections",
+  details: "Details",
+  layoutLeft: "Left panel toggle",
+  layoutRight: "Right panel toggle",
+  spacer: "Spacer",
 };
 
 export interface SettingOption {
@@ -53,6 +78,20 @@ export interface SettingDef {
 
 /** Settings each widget exposes in Preferences → Toolbar. Widgets not listed here have no settings. */
 export const WIDGET_SETTINGS: Partial<Record<WidgetId, { title: string; settings: SettingDef[] }>> = {
+  logo: {
+    title: "Logo",
+    settings: [
+      {
+        key: "variant",
+        label: "Style",
+        fallback: "compact",
+        options: [
+          { value: "compact", label: "Compact" },
+          { value: "full", label: "Full" },
+        ],
+      },
+    ],
+  },
   workspaces: {
     title: "Workspaces",
     settings: [
@@ -70,8 +109,10 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetId, { title: string; settings
   },
 };
 
-/** Default placement: the top bar carries tabs and window actions; the bottom bar carries settings, status, and workspaces. */
+/** Default placement. Side strips hold views (explorer, details); the top bar holds the panel collapse toggles. */
 export const DEFAULT_BARS: Record<BarPosition, WidgetId[]> = {
-  top: ["tabs", "actions", "layout"],
+  top: ["logo", "tabs", "actions", "layout", "layoutLeft", "layoutRight"],
   bottom: ["config", "theme", "shortcuts", "commands", "status", "workspaces"],
+  left: ["explorer", "connections"],
+  right: ["details"],
 };

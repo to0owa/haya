@@ -5,6 +5,9 @@
   import { openTable } from "../wm/store.svelte";
   import Row from "../components/Row.svelte";
   import EmptyState from "../components/EmptyState.svelte";
+  import Button from "../components/Button.svelte";
+  import Icon from "../components/Icon.svelte";
+  import ConnectionForm from "./ConnectionForm.svelte";
 
   type Profile = { name: string; dialect: string; host: string; port: number; user: string; database: string };
   type Schema = { name: string; tables: string[] | null; expanded: boolean };
@@ -13,10 +16,14 @@
   let active = $state<string | null>(null);
   let schemas = $state<Schema[]>([]);
   let openConnections = $state(true);
+  let adding = $state(false);
 
-  onMount(async () => {
+  async function reload() {
     profiles = await invoke<Profile[]>("db_profiles");
-  });
+    adding = false;
+  }
+
+  onMount(reload);
 
   async function connect(name: string) {
     try {
@@ -46,8 +53,15 @@
 
 <div class="side-scroll">
   <div class="side-list-content">
-    <Row kind="head" label="Connections" badge={String(profiles.length)} expanded={openConnections} onclick={() => (openConnections = !openConnections)} />
-    {#if openConnections}
+    <div class="haya-conn-head">
+      <Row kind="head" label="Connections" badge={String(profiles.length)} expanded={openConnections} onclick={() => (openConnections = !openConnections)} />
+      <Button variant="icon" label="New connection" active={adding} onclick={() => (adding = !adding)}>
+        <Icon name="plus" />
+      </Button>
+    </div>
+    {#if adding}
+      <ConnectionForm onsaved={reload} oncancel={() => (adding = false)} />
+    {:else if openConnections}
       {#if profiles.length === 0}<EmptyState text="No connections yet. Add one in Settings." />{/if}
       {#each profiles as profile (profile.name)}
         <Row kind="item" label={profile.name} meta={profile.dialect === "cratedb" ? "CrateDB" : "Postgres"} selected={active === profile.name} onclick={() => connect(profile.name)}>

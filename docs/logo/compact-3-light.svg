@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-labelledby="haya-compact-3-light-title haya-compact-3-light-desc">
+  <title id="haya-compact-3-light-title">Haya Slipstream — compact, light</title>
+  <desc id="haya-compact-3-light-desc">Two offset lanes curve gently upward and forward, turning quiet speed lines into a compact flowing mark. At 16 px, two rounded lanes remain separate and the upward sweep reads without fine detail.</desc>
+  <rect width="24" height="24" rx="6" fill="#eef0f3"/>
+  <g fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5.75 10.5H13.5C14.3 10.5 14.7 10.1 15.1 9.45L18 6.25" stroke="#1d2227" stroke-opacity="1"/>
+    <path d="M5.75 17.5H10.5C11.3 17.5 11.7 17.1 12.1 16.45L17.75 12" stroke="#9a6b12" stroke-opacity="1"/>
+  </g>
+</svg>

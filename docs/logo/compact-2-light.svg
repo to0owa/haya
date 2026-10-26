@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-labelledby="haya-compact-2-light-title haya-compact-2-light-desc">
+  <title id="haya-compact-2-light-title">Haya Twin rails — compact, light</title>
+  <desc id="haya-compact-2-light-desc">Two parallel, forward-slanting rails pair terminal and database work; the shorter accent rail adds a restrained sense of motion. At 16 px, two broad, separated slashes retain their different lengths and forward lean.</desc>
+  <rect width="24" height="24" rx="6" fill="#eef0f3"/>
+  <g fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.25 6.5 6.75 17.5" stroke="#1d2227" stroke-opacity="1"/>
+    <path d="M17.25 8.75 14.5 17.5" stroke="#9a6b12" stroke-opacity="1"/>
+  </g>
+</svg>

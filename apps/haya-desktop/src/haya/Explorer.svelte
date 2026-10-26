@@ -1,7 +1,6 @@
 <script lang="ts">
-  import ConnectionsWindow from "./windows/ConnectionsWindow.svelte";
+  import EmptyState from "./components/EmptyState.svelte";
 </script>
 
-<aside class="haya-explorer" aria-label="Explorer">
-  <ConnectionsWindow />
-</aside>
+<!-- The project file tree. Not built yet; database connections live in their own view. -->
+<EmptyState text="The file explorer is not built yet." />

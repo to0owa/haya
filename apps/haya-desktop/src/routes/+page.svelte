@@ -3,17 +3,16 @@
   import AppShell from "../haya/templates/AppShell.svelte";
   import Stage from "../haya/templates/Stage.svelte";
   import SidePanel from "../haya/templates/SidePanel.svelte";
-  import Toolbar from "../haya/templates/Toolbar.svelte";
-  import Button from "../haya/components/Button.svelte";
-  import Icon from "../haya/components/Icon.svelte";
   import Tiles from "../haya/wm/Tiles.svelte";
-  import Bar from "../haya/wm/Bar.svelte";
+  import Bar from "../haya/wm/bar/Bar.svelte";
   import Toasts from "../haya/Toasts.svelte";
   import Preferences from "../haya/preferences/Preferences.svelte";
   import CommandPalette from "../haya/commands/CommandPalette.svelte";
+  import EditLayer from "../haya/toolbar/EditLayer.svelte";
   import Explorer from "../haya/Explorer.svelte";
+  import Connections from "../haya/windows/ConnectionsWindow.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
-  import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
+  import { handleKey, snapshot, wm } from "../haya/wm/store.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
   import { initTheme } from "../haya/theme/theme.svelte";
 
@@ -47,16 +46,14 @@
   {/snippet}
 
   {#snippet leftEdge()}
-    <Toolbar edge="left" label="Left toolbar">
-      <Button variant="icon" label="Explorer (⌘B)" active={wm.explorerOpen} onclick={toggleExplorer}>
-        <Icon name="panel-left" />
-      </Button>
-    </Toolbar>
+    <Bar part="left" />
   {/snippet}
 
   {#snippet leftPanel()}
-    {#if wm.explorerOpen}
-      <SidePanel side="left" label="Explorer"><Explorer /></SidePanel>
+    {#if wm.leftView}
+      <SidePanel side="left" label={wm.leftView === "explorer" ? "Explorer" : "Connections"}>
+        {#if wm.leftView === "explorer"}<Explorer />{:else}<Connections />{/if}
+      </SidePanel>
     {/if}
   {/snippet}
 
@@ -73,11 +70,7 @@
   {/snippet}
 
   {#snippet rightEdge()}
-    <Toolbar edge="right" label="Right toolbar">
-      <Button variant="icon" label="Details (⇧⌘B)" active={wm.rightOpen} onclick={toggleRight}>
-        <Icon name="panel-right" />
-      </Button>
-    </Toolbar>
+    <Bar part="right" />
   {/snippet}
 
   {#snippet bottom()}
@@ -88,3 +81,4 @@
 <Toasts />
 <Preferences />
 <CommandPalette />
+<EditLayer />

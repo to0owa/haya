@@ -3,6 +3,7 @@
 // so terminals and database sessions keep running while another workspace is shown.
 
 import { togglePalette } from "../commands/palette.svelte";
+import { toggleEdit } from "../toolbar/edit.svelte";
 import {
   activeWorkspace, changeMasterCount, closeWindow, createDefaultConfig, cycleLayout, focusStep, focusWindow,
   moveToWorkspace, openWindow, promoteToMaster, setActiveWorkspace, setLayout, adjustRatio,
@@ -20,16 +21,38 @@ export interface DetailsRow {
   row: (string | null)[];
 }
 
+export type LeftView = "explorer" | "connections";
+
 export const wm = $state({
   config: createDefaultConfig() as Config,
   instances: {} as Record<number, Instance>,
   details: null as DetailsRow | null,
-  explorerOpen: false,
+  leftView: null as LeftView | null,
+  lastLeftView: "explorer" as LeftView,
   rightOpen: false,
 });
 
+/** Activity-bar behaviour: the active view's icon collapses the panel, another view's icon switches to it. */
+export function selectLeft(view: LeftView) {
+  if (wm.leftView === view) {
+    wm.leftView = null;
+    return;
+  }
+  wm.leftView = view;
+  wm.lastLeftView = view;
+}
+
 export function toggleExplorer() {
-  wm.explorerOpen = !wm.explorerOpen;
+  selectLeft("explorer");
+}
+
+export function toggleConnections() {
+  selectLeft("connections");
+}
+
+/** Collapses the left panel, or restores the view it last showed. */
+export function toggleLeftPanel() {
+  wm.leftView = wm.leftView ? null : wm.lastLeftView;
 }
 
 export function toggleRight() {
@@ -140,6 +163,13 @@ export function handleKey(event: KeyboardEvent): boolean {
     else switchWorkspace(workspaceId);
     return true;
   }
+  // ⇧⌘, toggles toolbar edit mode. Matched by physical key, like the letters below.
+  if (event.code === "Comma" && event.shiftKey) {
+    event.preventDefault();
+    toggleEdit();
+    return true;
+  }
+
   // Letters are matched by physical key (event.code), so ⇧⌘P and ⇧⌘B work whatever case the OS reports.
   const letter = event.code.startsWith("Key") ? event.code.slice(3).toLowerCase() : null;
   const key = letter !== null ? (event.shiftKey ? `⇧${letter}` : letter) : event.key === "]" && event.shiftKey ? "]" : event.key;
@@ -186,6 +216,16 @@ export function setWidgetSetting(widget: string, key: string, value: string) {
 export function setWidgetHidden(widget: string, hidden: boolean) {
   const rest = wm.config.hiddenWidgets.filter((id) => id !== widget);
   wm.config.hiddenWidgets = hidden ? [...rest, widget] : rest;
+}
+
+/** Replaces the order of widgets in one toolbar. */
+export function setBarLayout(part: string, ids: string[]) {
+  wm.config.barLayout = { ...wm.config.barLayout, [part]: ids };
+}
+
+/** Drops every custom toolbar layout, back to the default placement. */
+export function resetBarLayout() {
+  wm.config.barLayout = {};
 }
 
 /** Replaces the state with a saved snapshot. Instances without a window are dropped. */

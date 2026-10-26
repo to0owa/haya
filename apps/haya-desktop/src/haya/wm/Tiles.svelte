@@ -40,6 +40,8 @@
 
   const windowIds = $derived(Object.keys(wm.config.windows).map(Number));
   const focusedId = $derived(activeWorkspace(wm.config).focus);
+  // The active outline only means something when there is more than one visible window to choose between.
+  const showFocus = $derived(Object.keys(placement).length > 1);
 
 </script>
 
@@ -53,7 +55,7 @@
     {@const inst = wm.instances[id]}
     <div
       class="wm-window"
-      class:is-focused={focusedId === id}
+      class:is-focused={showFocus && focusedId === id}
       style={rect ? `left:${rect.x}px;top:${rect.y}px;width:${rect.w}px;height:${rect.h}px` : "display:none"}
       onmousedown={() => focus(id)}
       role="presentation"

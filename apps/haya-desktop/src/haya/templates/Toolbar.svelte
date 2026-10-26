@@ -10,7 +10,7 @@
   }: { edge: "top" | "bottom" | "left" | "right"; label: string; children: Snippet } = $props();
 </script>
 
-<div class="haya-chrome haya-chrome-{edge}" role="toolbar" aria-label={label} data-tauri-drag-region={edge === "top" ? "" : undefined}>
+<div class="haya-chrome haya-chrome-{edge}" role="toolbar" aria-label={label} data-part={edge} data-tauri-drag-region={edge === "top" ? "" : undefined}>
   {#if edge === "left" || edge === "right"}<Spacer axis="y" />{/if}
   {@render children()}
   {#if edge === "left" || edge === "right"}<Spacer axis="y" />{/if}

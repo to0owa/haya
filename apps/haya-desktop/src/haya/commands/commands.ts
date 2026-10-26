@@ -1,6 +1,7 @@
 // Every command the palette lists. Shortcuts are shown for reference; handleKey does the actual binding.
-import { closeFocused, masters, nextLayout, open, promote, ratio, step, switchWorkspace, toggleExplorer, toggleRight } from "../wm/store.svelte";
+import { closeFocused, masters, nextLayout, open, promote, ratio, step, switchWorkspace, toggleConnections, toggleExplorer, toggleRight } from "../wm/store.svelte";
 import { openPreferences } from "../preferences/prefs-state.svelte";
+import { toggleEdit } from "../toolbar/edit.svelte";
 
 export interface Command {
   label: string;
@@ -25,8 +26,10 @@ export const COMMANDS: Command[] = [
   { label: "Add Master Window", shortcut: "⌘ =", run: () => masters(1) },
   { label: "Remove Master Window", shortcut: "⌘ -", run: () => masters(-1) },
   { label: "Toggle Explorer", shortcut: "⌘ B", run: toggleExplorer },
+  { label: "Toggle Connections", run: toggleConnections },
   { label: "Toggle Details", shortcut: "⇧ ⌘ B", run: toggleRight },
   ...WORKSPACE_COMMANDS,
+  { label: "Edit Toolbar", shortcut: "⇧ ⌘ ,", run: toggleEdit },
   { label: "Preferences: Color Theme", run: () => openPreferences("interface") },
   { label: "Preferences: Toolbar", run: () => openPreferences("toolbar") },
   { label: "Preferences: Keyboard Shortcuts", run: () => openPreferences("shortcuts") },

@@ -147,3 +147,14 @@ describe("widget settings", () => {
     expect(config.hiddenWidgets).toEqual(["status", "theme"]);
   });
 });
+
+describe("toolbar layout", () => {
+  test("keeps string widget ids per bar and drops anything else", () => {
+    const config = normalize({ version: 1, workspaces: [], barLayout: { top: ["tabs", 2, "spacer"], left: "nope" } });
+    expect(config.barLayout).toEqual({ top: ["tabs", "spacer"] });
+  });
+
+  test("defaults to no custom layout", () => {
+    expect(createDefaultConfig().barLayout).toEqual({});
+  });
+});

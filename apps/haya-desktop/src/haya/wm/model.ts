@@ -35,6 +35,8 @@ export interface Config {
   widgetSettings: Record<string, Record<string, string>>;
   /** Widgets the user has hidden from the toolbars. Chosen from the toolbar's right-click menu. */
   hiddenWidgets: string[];
+  /** Widget ids per toolbar, in order. A missing bar uses the default placement. */
+  barLayout: Record<string, string[]>;
 }
 
 export const WORKSPACE_COUNT = 10;
@@ -70,6 +72,7 @@ export function createDefaultConfig(): Config {
     windows: {},
     widgetSettings: {},
     hiddenWidgets: [],
+    barLayout: {},
   };
 }
 
@@ -142,7 +145,14 @@ export function normalize(raw: unknown): Config {
     ? raw.hiddenWidgets.filter((id): id is string => typeof id === "string")
     : [];
 
-  return { version: 1, workspaces, active, rules, nextWindowId, windows, widgetSettings, hiddenWidgets };
+  const barLayout: Record<string, string[]> = {};
+  if (isObject(raw.barLayout)) {
+    for (const [part, ids] of Object.entries(raw.barLayout)) {
+      if (Array.isArray(ids)) barLayout[part] = ids.filter((id): id is string => typeof id === "string");
+    }
+  }
+
+  return { version: 1, workspaces, active, rules, nextWindowId, windows, widgetSettings, hiddenWidgets, barLayout };
 }
 
 export function workspace(config: Config, id: number): Workspace {
