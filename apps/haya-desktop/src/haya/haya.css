@@ -95,8 +95,6 @@
 
 /* Workspace area: tiles from computeTiles, each tile has a tab strip above its windows. */
 .wm-area { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
-.wm-window { position: absolute; overflow: hidden; background: var(--bg); }
-.wm-window.is-focused { outline: 1px solid var(--line2, var(--line)); outline-offset: -1px; }
 .wm-placeholder { padding: var(--space-3); color: var(--quiet); font-size: 12px; }
 
 /* Bars: top (workspaces, actions, layout) and bottom (status). */
@@ -115,9 +113,6 @@
 .haya-titlebar .haya-bar-top { height: 100%; border: 0; background: transparent; padding: 0; width: 100%; }
 
 /* Window panels: rounded, separated by gaps. */
-.wm-window { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-.wm-window { margin-top: 0; }
-.wm-window.is-focused { border-color: var(--line2, var(--line)); }
 
 /* The titlebar is chrome, not text: no text selection when dragging or clicking it. */
 .haya-titlebar, .haya-titlebar * { user-select: none; -webkit-user-select: none; }
@@ -144,8 +139,6 @@
 .haya-titlebar { border-bottom: 0; }
 .haya-bar-bottom { background: var(--haya-frame); border: 0; }
 .haya-stage { background: var(--haya-stage); border: 0; border-radius: var(--haya-radius); }
-.wm-window { background: var(--haya-window); border: 0; border-radius: var(--haya-radius); }
-.wm-window.is-focused { outline: 0; }
 
 /* Compact chrome: titlebar 32px, status bar 22px, controls 20px. */
 .haya-titlebar { height: 32px; padding-left: 0; padding-right: 6px; }
@@ -337,8 +330,8 @@
 /* Reserved corner for the native window buttons. Toolbars start after it. */
 .haya-traffic { flex: none; width: var(--haya-traffic-w); height: 100%; }
 
-/* ---- Toolbar widgets: the wrapper is transparent to layout so items keep their flex behaviour ---- */
-.haya-widget { display: contents; }
+/* ---- Toolbar hit area: the wrapper is transparent to layout, so the right-click covers the whole toolbar ---- */
+.haya-bar-hit { display: contents; }
 
 /* ---- Context menu ---- */
 .haya-menu { position: fixed; z-index: 70; min-width: 200px; padding: 6px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); box-shadow: 0 12px 32px #0006; }
@@ -354,3 +347,29 @@
 .haya-ws-name { padding: 0 8px; color: var(--muted); font-size: var(--haya-chrome-font); white-space: nowrap; cursor: default; }
 .haya-ws-popover { display: none; position: absolute; bottom: calc(100% + 6px); left: 0; gap: 2px; padding: 4px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); box-shadow: 0 12px 32px #0006; }
 .haya-ws-label:hover .haya-ws-popover, .haya-ws-label:focus-within .haya-ws-popover { display: flex; }
+
+/* ---- Selection: chrome is not text. Content areas (grid, field values) and inputs stay selectable. ---- */
+.app { user-select: none; -webkit-user-select: none; }
+.haya-grid, .haya-field-value, .haya-toast-message { user-select: text; -webkit-user-select: text; }
+input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
+
+/* Toolbar settings inside Preferences */
+.haya-prefs-setting { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 10px; }
+.haya-prefs-setting-label { color: var(--quiet); font-size: 11px; }
+.haya-prefs-options { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ---- Window frame: one element per window. The border shows which window is active. ----
+   overflow: hidden clips content to the border's inner edge, so the content's corners follow the radius automatically. */
+:root { --haya-active: var(--amber); }
+.wm-window { position: absolute; overflow: hidden; border: 1px solid transparent; border-radius: var(--haya-radius); background: var(--haya-window); }
+.wm-window.is-focused { border-color: var(--haya-active); }
+
+/* ---- Command palette ---- */
+.haya-palette-scrim { position: fixed; inset: 0; z-index: 65; display: flex; justify-content: center; align-items: flex-start; padding-top: 14vh; background: #0006; }
+.haya-palette { width: min(540px, calc(100vw - 32px)); max-height: 60vh; display: flex; flex-direction: column; border: 1px solid var(--line2); border-radius: 12px; background: var(--popup); box-shadow: 0 24px 64px #0008; overflow: hidden; }
+.haya-palette-input { height: 40px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--text); font-size: 13px; outline: none; }
+.haya-palette-list { overflow-y: auto; padding: 4px; }
+.haya-palette-item { display: flex; align-items: center; justify-content: space-between; gap: var(--haya-chrome-gap); width: 100%; height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
+.haya-palette-item.is-on { background: var(--selected); color: var(--text); }
+.haya-palette-item kbd { color: var(--quiet); font-family: inherit; font-size: 11px; white-space: nowrap; }
+.haya-palette-empty { padding: 12px 10px; color: var(--quiet); font-size: 12px; }

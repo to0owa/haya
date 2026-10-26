@@ -4,6 +4,6 @@
   import { openPreferences } from "../../../preferences/prefs-state.svelte";
 </script>
 
-<Button variant="icon" label="Preferences" onclick={() => openPreferences("interface")}>
+<Button variant="icon" label="Preferences" onclick={() => openPreferences("toolbar")}>
   <Icon name="sliders" />
 </Button>

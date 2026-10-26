@@ -1,53 +1,39 @@
 <script lang="ts">
   import Toolbar from "../../templates/Toolbar.svelte";
   import ContextMenu, { type MenuItem } from "../../components/ContextMenu.svelte";
-  import { DEFAULT_BARS, WIDGETS, WIDGET_SETTINGS, type BarPosition, type WidgetId } from "./registry";
-  import { setWidgetSetting, widgetSetting } from "../store.svelte";
+  import { DEFAULT_BARS, WIDGETS, WIDGET_LABELS, type BarPosition, type WidgetId } from "./registry";
+  import { setWidgetHidden, wm } from "../store.svelte";
 
   let { part }: { part: BarPosition } = $props();
 
-  const widgets = $derived(DEFAULT_BARS[part]);
+  // Hidden widgets are dropped from both bars. The menu lists every widget, so any of them can come back.
+  const widgets = $derived(DEFAULT_BARS[part].filter((id) => !wm.config.hiddenWidgets.includes(id)));
+  const ALL = Object.keys(WIDGETS) as WidgetId[];
 
-  // Right-clicking a widget opens its settings. Widgets without settings show no menu.
-  let menu = $state<{ x: number; y: number; widget: WidgetId } | null>(null);
+  let menu = $state<{ x: number; y: number } | null>(null);
 
-  function openMenu(event: MouseEvent, widget: WidgetId) {
-    if (!WIDGET_SETTINGS[widget]) return;
+  function openMenu(event: MouseEvent) {
     event.preventDefault();
-    menu = { x: event.clientX, y: event.clientY, widget };
+    menu = { x: event.clientX, y: event.clientY };
   }
 
-  const menuItems = $derived.by((): MenuItem[] => {
-    const open = menu;
-    const def = open ? WIDGET_SETTINGS[open.widget] : undefined;
-    if (!open || !def) return [];
-    return def.settings.flatMap((setting) => {
-      const current = widgetSetting(open.widget, setting.key, setting.fallback);
-      return setting.options.map((option) => ({
-        label: option.label,
-        section: setting.label,
-        checked: current === option.value,
-        onselect: () => setWidgetSetting(open.widget, setting.key, option.value),
-      }));
-    });
-  });
+  const menuItems = $derived.by((): MenuItem[] =>
+    ALL.map((id) => {
+      const hidden = wm.config.hiddenWidgets.includes(id);
+      return { label: WIDGET_LABELS[id], checked: !hidden, onselect: () => setWidgetHidden(id, !hidden) };
+    }),
+  );
 </script>
 
-<Toolbar edge={part} label={part === "top" ? "Workspaces and layout" : "Status"}>
-  {#each widgets as id (id)}
-    {@const Widget = WIDGETS[id]}
-    <div class="haya-widget" role="presentation" oncontextmenu={(event) => openMenu(event, id)}>
+<div class="haya-bar-hit" role="presentation" oncontextmenu={openMenu}>
+  <Toolbar edge={part} label={part === "top" ? "Workspaces and layout" : "Status"}>
+    {#each widgets as id (id)}
+      {@const Widget = WIDGETS[id]}
       <Widget />
-    </div>
-  {/each}
-</Toolbar>
+    {/each}
+  </Toolbar>
+</div>
 
 {#if menu}
-  <ContextMenu
-    x={menu.x}
-    y={menu.y}
-    title={WIDGET_SETTINGS[menu.widget]?.title ?? ""}
-    items={menuItems}
-    onclose={() => (menu = null)}
-  />
+  <ContextMenu x={menu.x} y={menu.y} title="Toolbar" items={menuItems} onclose={() => (menu = null)} />
 {/if}

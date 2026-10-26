@@ -10,6 +10,7 @@
   import Bar from "../haya/wm/Bar.svelte";
   import Toasts from "../haya/Toasts.svelte";
   import Preferences from "../haya/preferences/Preferences.svelte";
+  import CommandPalette from "../haya/commands/CommandPalette.svelte";
   import Explorer from "../haya/Explorer.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
   import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
@@ -17,6 +18,13 @@
   import { initTheme } from "../haya/theme/theme.svelte";
 
   let ready = $state(false);
+
+  // The WebView menu (Reload, Inspect) does not belong in a desktop app. Text fields keep theirs.
+  function suppressNativeMenu(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("input, textarea, [contenteditable='true']")) return;
+    event.preventDefault();
+  }
 
   onMount(async () => {
     initTheme();
@@ -31,7 +39,7 @@
   });
 </script>
 
-<svelte:window onkeydown={(event) => handleKey(event)} />
+<svelte:window onkeydowncapture={(event) => handleKey(event)} oncontextmenu={suppressNativeMenu} />
 
 <AppShell>
   {#snippet titlebar()}
@@ -79,3 +87,4 @@
 
 <Toasts />
 <Preferences />
+<CommandPalette />

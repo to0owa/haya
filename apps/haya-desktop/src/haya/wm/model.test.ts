@@ -141,4 +141,9 @@ describe("widget settings", () => {
   test("defaults to no settings", () => {
     expect(createDefaultConfig().widgetSettings).toEqual({});
   });
+
+  test("keeps only string widget ids in hiddenWidgets", () => {
+    const config = normalize({ version: 1, workspaces: [], hiddenWidgets: ["status", 3, "theme"] });
+    expect(config.hiddenWidgets).toEqual(["status", "theme"]);
+  });
 });

@@ -3,14 +3,18 @@
   import Button from "../components/Button.svelte";
   import ThemeList from "../theme/ThemeList.svelte";
   import { SHORTCUTS } from "../wm/shortcuts";
+  import { WIDGET_SETTINGS } from "../wm/bar/registry";
+  import { setWidgetSetting, widgetSetting } from "../wm/store.svelte";
   import { closePreferences, prefs, type Section } from "./prefs-state.svelte";
 
-  const SECTIONS: { id: Section; label: string; icon: "palette" | "keyboard" }[] = [
+  const SECTIONS: { id: Section; label: string; icon: "palette" | "sliders" | "keyboard" }[] = [
     { id: "interface", label: "Interface", icon: "palette" },
+    { id: "toolbar", label: "Toolbar", icon: "sliders" },
     { id: "shortcuts", label: "Keyboard shortcuts", icon: "keyboard" },
   ];
 
   const current = $derived(SECTIONS.find((s) => s.id === prefs.section) ?? SECTIONS[0]);
+  const widgets = Object.entries(WIDGET_SETTINGS);
 
   function onkey(event: KeyboardEvent) {
     if (prefs.open && event.key === "Escape") closePreferences();
@@ -43,6 +47,27 @@
         {#if prefs.section === "interface"}
           <h3 class="haya-prefs-sub">Color theme</h3>
           <ThemeList />
+        {:else if prefs.section === "toolbar"}
+          {#each widgets as [widget, def] (widget)}
+            <h3 class="haya-prefs-sub">{def.title}</h3>
+            {#each def.settings as setting (setting.key)}
+              <div class="haya-prefs-setting">
+                <span class="haya-prefs-setting-label">{setting.label}</span>
+                <div class="haya-prefs-options">
+                  {#each setting.options as option (option.value)}
+                    <Button
+                      variant="text"
+                      label={option.label}
+                      active={widgetSetting(widget, setting.key, setting.fallback) === option.value}
+                      onclick={() => setWidgetSetting(widget, setting.key, option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+          {/each}
         {:else}
           <div class="haya-prefs-shortcuts">
             {#each SHORTCUTS as shortcut (shortcut.action)}

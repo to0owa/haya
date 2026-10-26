@@ -1,6 +1,6 @@
 // Preferences dialog state. Opened from the bottom bar buttons; closed with Escape or the close button.
 
-export type Section = "interface" | "shortcuts";
+export type Section = "interface" | "toolbar" | "shortcuts";
 
 export const prefs = $state({
   open: false,

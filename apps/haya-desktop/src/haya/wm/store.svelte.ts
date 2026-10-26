@@ -2,6 +2,7 @@
 // reactive state and the operations the UI calls. Window instances stay mounted in every workspace
 // so terminals and database sessions keep running while another workspace is shown.
 
+import { togglePalette } from "../commands/palette.svelte";
 import {
   activeWorkspace, changeMasterCount, closeWindow, createDefaultConfig, cycleLayout, focusStep, focusWindow,
   moveToWorkspace, openWindow, promoteToMaster, setActiveWorkspace, setLayout, adjustRatio,
@@ -139,6 +140,9 @@ export function handleKey(event: KeyboardEvent): boolean {
     else switchWorkspace(workspaceId);
     return true;
   }
+  // Letters are matched by physical key (event.code), so ⇧⌘P and ⇧⌘B work whatever case the OS reports.
+  const letter = event.code.startsWith("Key") ? event.code.slice(3).toLowerCase() : null;
+  const key = letter !== null ? (event.shiftKey ? `⇧${letter}` : letter) : event.key === "]" && event.shiftKey ? "]" : event.key;
   const actions: Record<string, () => void> = {
     t: () => open("terminal"),
     w: closeFocused,
@@ -149,11 +153,11 @@ export function handleKey(event: KeyboardEvent): boolean {
     "]": () => ratio(0.05),
     "[": () => ratio(-0.05),
     b: toggleExplorer,
-    B: toggleRight,
+    "⇧b": toggleRight,
+    "⇧p": togglePalette,
     "=": () => masters(1),
     "-": () => masters(-1),
   };
-  const key = event.key === "]" && event.shiftKey ? "]" : event.key;
   const action = actions[key];
   if (!action) return false;
   event.preventDefault();
@@ -176,6 +180,12 @@ export function widgetSetting(widget: string, key: string, fallback: string): st
 
 export function setWidgetSetting(widget: string, key: string, value: string) {
   wm.config.widgetSettings[widget] = { ...wm.config.widgetSettings[widget], [key]: value };
+}
+
+/** Shows or hides a toolbar widget. Hidden widgets stay hidden after a restart, because they are saved in the config. */
+export function setWidgetHidden(widget: string, hidden: boolean) {
+  const rest = wm.config.hiddenWidgets.filter((id) => id !== widget);
+  wm.config.hiddenWidgets = hidden ? [...rest, widget] : rest;
 }
 
 /** Replaces the state with a saved snapshot. Instances without a window are dropped. */

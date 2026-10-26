@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { placeInside } from "../floating";
+
   export interface MenuItem {
     label: string;
     checked: boolean;
@@ -7,7 +9,7 @@
     onselect: () => void;
   }
 
-  // A small menu at a point on screen. Closes after a choice, on a click outside, or on Escape.
+  // A small menu at a point on screen. Stays inside the window. Closes after a choice, on a click outside, or on Escape.
   let {
     x,
     y,
@@ -15,6 +17,16 @@
     items,
     onclose,
   }: { x: number; y: number; title: string; items: MenuItem[]; onclose: () => void } = $props();
+
+  let el: HTMLDivElement | undefined = $state();
+  let place = $state<{ x: number; y: number } | null>(null);
+
+  // Measure once the menu is in the DOM, then move it so it fits the window.
+  $effect(() => {
+    if (!el) return;
+    const { width, height } = el.getBoundingClientRect();
+    place = placeInside({ x, y }, { w: width, h: height }, { w: window.innerWidth, h: window.innerHeight });
+  });
 
   function onkey(event: KeyboardEvent) {
     if (event.key === "Escape") onclose();
@@ -27,7 +39,13 @@
 
 <svelte:window onkeydown={onkey} onmousedown={onpointer} />
 
-<div class="haya-menu" role="menu" aria-label={title} style="left:{x}px;top:{y}px">
+<div
+  class="haya-menu"
+  role="menu"
+  aria-label={title}
+  bind:this={el}
+  style="left:{place?.x ?? x}px;top:{place?.y ?? y}px;visibility:{place ? 'visible' : 'hidden'}"
+>
   <div class="haya-menu-title">{title}</div>
   {#each items as item, i (i)}
     {#if item.section && (i === 0 || items[i - 1].section !== item.section)}

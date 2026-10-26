@@ -7,6 +7,7 @@ import ThemeToggle from "../../theme/ThemeToggle.svelte";
 import ConfigButton from "./widgets/ConfigButton.svelte";
 import WindowTabs from "./widgets/WindowTabs.svelte";
 import ShortcutsButton from "./widgets/ShortcutsButton.svelte";
+import CommandButton from "../../commands/CommandButton.svelte";
 
 export type BarPosition = "top" | "bottom";
 
@@ -19,9 +20,23 @@ export const WIDGETS = {
   config: ConfigButton,
   theme: ThemeToggle,
   shortcuts: ShortcutsButton,
+  commands: CommandButton,
 } as const;
 
 export type WidgetId = keyof typeof WIDGETS;
+
+/** Names shown in the toolbar's right-click menu. */
+export const WIDGET_LABELS: Record<WidgetId, string> = {
+  workspaces: "Workspaces",
+  tabs: "Window tabs",
+  actions: "Window actions",
+  layout: "Layout",
+  status: "Status",
+  config: "Preferences",
+  theme: "Color theme",
+  shortcuts: "Keyboard shortcuts",
+  commands: "Command palette",
+};
 
 export interface SettingOption {
   value: string;
@@ -36,7 +51,7 @@ export interface SettingDef {
   options: SettingOption[];
 }
 
-/** Settings each widget exposes in its right-click menu. Widgets not listed here have no menu. */
+/** Settings each widget exposes in Preferences → Toolbar. Widgets not listed here have no settings. */
 export const WIDGET_SETTINGS: Partial<Record<WidgetId, { title: string; settings: SettingDef[] }>> = {
   workspaces: {
     title: "Workspaces",
@@ -58,5 +73,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetId, { title: string; settings
 /** Default placement: the top bar carries tabs and window actions; the bottom bar carries settings, status, and workspaces. */
 export const DEFAULT_BARS: Record<BarPosition, WidgetId[]> = {
   top: ["tabs", "actions", "layout"],
-  bottom: ["config", "theme", "shortcuts", "status", "workspaces"],
+  bottom: ["config", "theme", "shortcuts", "commands", "status", "workspaces"],
 };

@@ -8,9 +8,10 @@
   import { computeTiles, type Rect } from "./layouts";
   import EmptyState from "../components/EmptyState.svelte";
 
-  const GAP = 8;
+  // Gap between windows and between windows and the stage edge.
+  const GAP = 2;
 
-  /** Shrinks a tile by half the gap on every side, so neighbours are GAP apart and the edges GAP/2 from the frame. */
+  /** Shrinks a tile by half the gap on every side. The area is pre-shrunk by half the gap, so neighbours and the stage edge are both GAP apart. */
   function inset(rect: Rect): Rect {
     const h = GAP / 2;
     return { x: rect.x + h, y: rect.y + h, w: Math.max(0, rect.w - GAP), h: Math.max(0, rect.h - GAP) };
@@ -24,7 +25,7 @@
       workspace: activeWorkspace(wm.config),
       kinds: wm.config.windows,
       rules: wm.config.rules,
-      area: { x: 0, y: 0, w: Math.max(0, width), h: Math.max(0, height) } satisfies Rect,
+      area: { x: GAP / 2, y: GAP / 2, w: Math.max(0, width - GAP), h: Math.max(0, height - GAP) } satisfies Rect,
     }),
   );
 

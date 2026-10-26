@@ -31,8 +31,10 @@ export interface Config {
   rules: Record<WindowKind, Region>;
   nextWindowId: number;
   windows: Record<number, WindowKind>;
-  /** Per-widget settings chosen from the widget's context menu, keyed by widget id then setting key. */
+  /** Per-widget settings, keyed by widget id then setting key. Edited in Preferences → Toolbar. */
   widgetSettings: Record<string, Record<string, string>>;
+  /** Widgets the user has hidden from the toolbars. Chosen from the toolbar's right-click menu. */
+  hiddenWidgets: string[];
 }
 
 export const WORKSPACE_COUNT = 10;
@@ -67,6 +69,7 @@ export function createDefaultConfig(): Config {
     nextWindowId: 1,
     windows: {},
     widgetSettings: {},
+    hiddenWidgets: [],
   };
 }
 
@@ -135,7 +138,11 @@ export function normalize(raw: unknown): Config {
     }
   }
 
-  return { version: 1, workspaces, active, rules, nextWindowId, windows, widgetSettings };
+  const hiddenWidgets = Array.isArray(raw.hiddenWidgets)
+    ? raw.hiddenWidgets.filter((id): id is string => typeof id === "string")
+    : [];
+
+  return { version: 1, workspaces, active, rules, nextWindowId, windows, widgetSettings, hiddenWidgets };
 }
 
 export function workspace(config: Config, id: number): Workspace {
