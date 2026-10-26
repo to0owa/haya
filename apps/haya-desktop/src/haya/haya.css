@@ -152,3 +152,22 @@
 
 /* Bottom status bar sits in the frame below the stage, aligned with the side gutters. */
 .haya-bar-bottom { height: 28px; flex-shrink: 0; padding: 0 var(--space-3) 0 var(--space-3); border-top: 0; background: transparent; }
+
+/* ---- Haya design system: frame, stage, windows ----
+   Frame (titlebar, side gutters, status bar) uses one color: --chrome.
+   Stage (the workspace) is a darker inset panel: --panel.
+   Windows sit on the stage with one step of lift: --raised.
+   Separation comes from color steps and radius, not borders. */
+:root {
+  --haya-radius: 12px;
+  --haya-frame: var(--chrome);
+  --haya-stage: var(--panel);
+  --haya-window: var(--raised);
+}
+.app, .haya-titlebar, .haya-bar-bottom, .haya-edge { background: var(--haya-frame); }
+.haya-titlebar { border-bottom: 0; }
+.haya-bar-bottom { background: var(--haya-frame); border: 0; }
+.haya-stage { background: var(--haya-stage); border: 0; border-radius: var(--haya-radius); }
+.wm-tabs { background: var(--haya-stage); border: 0; border-radius: var(--haya-radius) var(--haya-radius) 0 0; }
+.wm-window { background: var(--haya-window); border: 0; border-radius: var(--haya-radius); }
+.wm-window.is-focused { outline: 0; }
