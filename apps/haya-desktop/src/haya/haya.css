@@ -197,3 +197,30 @@
 /* Explorer panel: sits directly left of the stage, no border and no background, so it reads as part of the frame. */
 .haya-explorer { width: 240px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-right: 8px; background: transparent; border: 0; }
 .haya-explorer .side-scroll { overflow-y: auto; }
+
+/* ---- Chrome tokens: change these to resize every toolbar at once. ---- */
+:root {
+  --haya-chrome-h: 32px;       /* titlebar, status bar, side toolbar thickness */
+  --haya-chrome-font: 11px;    /* toolbar text */
+  --haya-btn-h: 22px;          /* toolbar buttons and workspace chips */
+  --haya-icon: 14px;           /* toolbar icons */
+  --haya-chrome-pad: 14px;     /* left and right padding inside the bars */
+  --haya-chrome-gap: 6px;      /* spacing between toolbar items */
+}
+
+.haya-titlebar, .haya-bar-top, .haya-bar-bottom { height: var(--haya-chrome-h); font-size: var(--haya-chrome-font); gap: var(--haya-chrome-gap); }
+.haya-bar-bottom { padding: 0 var(--haya-chrome-pad); }
+.haya-bar-top { padding: 0; }
+.haya-titlebar { padding-right: var(--haya-chrome-pad); }
+.haya-edge-left { width: var(--haya-chrome-h); }
+
+.haya-ws, .haya-bar-top .haya-button, .haya-bar-bottom .haya-status-cycle { height: var(--haya-btn-h); font-size: var(--haya-chrome-font); }
+.haya-ws { min-width: var(--haya-btn-h); padding: 0 6px; }
+.haya-bar-top .haya-button { padding: 0 8px; }
+.haya-edge-left .chrome-control { width: var(--haya-btn-h); height: var(--haya-btn-h); min-width: var(--haya-btn-h); }
+
+.haya-titlebar svg, .haya-edge svg, .haya-bar svg {
+  width: var(--haya-icon);
+  height: var(--haya-icon);
+}
+.haya-titlebar .chrome-control, .haya-edge .chrome-control { padding: 0; }
