@@ -6,6 +6,8 @@
   import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
   import Explorer from "../haya/Explorer.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
+  import ChromeBar from "../haya/chrome/ChromeBar.svelte";
+  import ChromeButton from "../haya/chrome/ChromeButton.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -46,11 +48,11 @@
 
   <div class="haya-body">
     <!-- Side edges sit outside the stage, in the frame's gutter. Future left and right toolbars go here. -->
-    <nav class="haya-edge haya-edge-left" aria-label="Left toolbar">
-      <button class="chrome-control" class:is-on={wm.explorerOpen} aria-label="Explorer" aria-pressed={wm.explorerOpen} title="Explorer (⌘B)" onclick={toggleExplorer}>
+    <ChromeBar edge="left" label="Left toolbar">
+      <ChromeButton label="Explorer (⌘B)" active={wm.explorerOpen} onclick={toggleExplorer}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></svg>
-      </button>
-    </nav>
+      </ChromeButton>
+    </ChromeBar>
 
     {#if wm.explorerOpen}
       <Explorer />
@@ -60,11 +62,11 @@
       <Tiles />
     </div>
 
-    <nav class="haya-edge haya-edge-right" aria-label="Right toolbar">
-      <button class="chrome-control" class:is-on={wm.rightOpen} aria-label="Details" aria-pressed={wm.rightOpen} title="Details (⇧⌘B)" onclick={toggleRight}>
+    <ChromeBar edge="right" label="Right toolbar">
+      <ChromeButton label="Details (⇧⌘B)" active={wm.rightOpen} onclick={toggleRight}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></svg>
-      </button>
-    </nav>
+      </ChromeButton>
+    </ChromeBar>
 
     {#if wm.rightOpen}
       <aside class="haya-right" aria-label="Details panel">
@@ -81,7 +83,7 @@
 
 <style>
   :global(body) { overflow: hidden; }
-  .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 8px 0 0; box-sizing: border-box; }
+  .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0; box-sizing: border-box; }
   /* Side toolbars share the chrome thickness: 32px, the same as the titlebar and status bar. */
   .haya-edge-left { display: flex; flex-direction: column; align-items: center; }
 

@@ -263,3 +263,15 @@
 .haya-ws { min-width: var(--haya-btn-h); }
 
 .haya-titlebar svg, .haya-edge svg, .haya-bar svg { width: var(--haya-icon); height: var(--haya-icon); }
+
+/* ---- Chrome components: every band and control uses these classes ---- */
+.haya-chrome { display: flex; align-items: center; box-sizing: border-box; background: var(--haya-frame); font-size: var(--haya-chrome-font); color: var(--quiet); }
+.haya-chrome-top, .haya-chrome-bottom { height: var(--haya-chrome-h); width: 100%; padding: 0 var(--haya-bar-pad); gap: var(--haya-chrome-gap); }
+.haya-chrome-left, .haya-chrome-right { width: var(--haya-chrome-h); height: 100%; flex-direction: column; justify-content: flex-start; padding: var(--haya-bar-pad) 0; gap: 0; }
+.haya-chrome-btn { display: inline-flex; align-items: center; justify-content: center; width: var(--haya-btn-h); height: var(--haya-btn-h); min-width: var(--haya-btn-h); padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); }
+.haya-chrome-left .haya-chrome-btn, .haya-chrome-right .haya-chrome-btn { margin: var(--haya-item-pad) 0; }
+.haya-chrome-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.haya-chrome-btn.is-on { background: var(--selected); color: var(--text); }
+.haya-chrome-btn:disabled { opacity: .38; }
+.haya-chrome-btn svg { width: var(--haya-icon); height: var(--haya-icon); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.haya-chrome-btn .panel-icon-fill { fill: currentColor; }
