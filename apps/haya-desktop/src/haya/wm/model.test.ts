@@ -127,3 +127,18 @@ describe("normalize", () => {
     expect(config.nextWindowId).toBeGreaterThan(7);
   });
 });
+
+describe("widget settings", () => {
+  test("keeps string settings and drops anything else", () => {
+    const config = normalize({
+      version: 1,
+      workspaces: [],
+      widgetSettings: { workspaces: { mode: "active", bad: 3 }, status: "nope" },
+    });
+    expect(config.widgetSettings).toEqual({ workspaces: { mode: "active" } });
+  });
+
+  test("defaults to no settings", () => {
+    expect(createDefaultConfig().widgetSettings).toEqual({});
+  });
+});

@@ -9,6 +9,7 @@
   import Tiles from "../haya/wm/Tiles.svelte";
   import Bar from "../haya/wm/Bar.svelte";
   import Toasts from "../haya/Toasts.svelte";
+  import Preferences from "../haya/preferences/Preferences.svelte";
   import Explorer from "../haya/Explorer.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
   import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
@@ -77,3 +78,4 @@
 </AppShell>
 
 <Toasts />
+<Preferences />

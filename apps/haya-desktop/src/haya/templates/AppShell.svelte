@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import TrafficLightArea from "./TrafficLightArea.svelte";
 
   // The window frame: titlebar on top, body (edges, panels, stage) in the middle, status bar at the bottom.
   let { titlebar, leftEdge, leftPanel, stage, rightPanel, rightEdge, bottom }: {
@@ -9,14 +10,18 @@
 
   // Drag from any titlebar spot that is not a control. Double-click toggles maximize.
   function onTitlebarDown(event: MouseEvent) {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    // Buttons and tabs handle their own clicks. Everything else in the titlebar drags the window.
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button, [role='tab']")) return;
     if (event.detail === 2) getCurrentWindow().toggleMaximize();
     else getCurrentWindow().startDragging();
   }
 </script>
 
 <div class="app">
-  <div class="haya-titlebar" onmousedown={onTitlebarDown} role="presentation">{@render titlebar()}</div>
+  <div class="haya-titlebar" onmousedown={onTitlebarDown} role="presentation">
+    <TrafficLightArea />
+    {@render titlebar()}
+  </div>
   <div class="haya-body">
     {@render leftEdge()}
     {#if leftPanel}{@render leftPanel()}{/if}

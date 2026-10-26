@@ -169,6 +169,15 @@ export function ensureDefaultWindows() {
   }
 }
 
+/** Reads one widget setting, or the fallback when the user has not chosen one. */
+export function widgetSetting(widget: string, key: string, fallback: string): string {
+  return wm.config.widgetSettings[widget]?.[key] ?? fallback;
+}
+
+export function setWidgetSetting(widget: string, key: string, value: string) {
+  wm.config.widgetSettings[widget] = { ...wm.config.widgetSettings[widget], [key]: value };
+}
+
 /** Replaces the state with a saved snapshot. Instances without a window are dropped. */
 export function hydrate(config: Config, instances: Record<number, Instance>) {
   wm.config = config;

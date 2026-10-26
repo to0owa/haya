@@ -6,10 +6,8 @@
   import { activeWorkspace } from "./model";
   import { close, focus, wm } from "./store.svelte";
   import { computeTiles, type Rect } from "./layouts";
-  import Tab from "../components/Tab.svelte";
   import EmptyState from "../components/EmptyState.svelte";
 
-  const TAB_H = 30;
   const GAP = 8;
 
   /** Shrinks a tile by half the gap on every side, so neighbours are GAP apart and the edges GAP/2 from the frame. */
@@ -42,19 +40,10 @@
   const windowIds = $derived(Object.keys(wm.config.windows).map(Number));
   const focusedId = $derived(activeWorkspace(wm.config).focus);
 
-  function label(id: number): string {
-    return wm.instances[id]?.title ?? "Window";
-  }
 </script>
 
 <div class="wm-area" bind:clientWidth={width} bind:clientHeight={height}>
   {#each tiles as tile, index (index)}
-    {@const box = inset(tile.rect)}
-    <div class="wm-tabs" style="left:{box.x}px;top:{box.y}px;width:{box.w}px;height:{TAB_H}px" role="tablist">
-      {#each tile.windows as id (id)}
-        <Tab label={label(id)} selected={tile.active === id} onselect={() => focus(id)} onclose={() => close(id)} />
-      {/each}
-    </div>
   {/each}
 
   {#each windowIds as id (id)}
@@ -64,7 +53,7 @@
     <div
       class="wm-window"
       class:is-focused={focusedId === id}
-      style={rect ? `left:${rect.x}px;top:${rect.y + TAB_H}px;width:${rect.w}px;height:${Math.max(0, rect.h - TAB_H)}px` : "display:none"}
+      style={rect ? `left:${rect.x}px;top:${rect.y}px;width:${rect.w}px;height:${rect.h}px` : "display:none"}
       onmousedown={() => focus(id)}
       role="presentation"
     >

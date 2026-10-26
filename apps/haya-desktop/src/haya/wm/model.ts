@@ -31,6 +31,8 @@ export interface Config {
   rules: Record<WindowKind, Region>;
   nextWindowId: number;
   windows: Record<number, WindowKind>;
+  /** Per-widget settings chosen from the widget's context menu, keyed by widget id then setting key. */
+  widgetSettings: Record<string, Record<string, string>>;
 }
 
 export const WORKSPACE_COUNT = 10;
@@ -64,6 +66,7 @@ export function createDefaultConfig(): Config {
     rules: { ...DEFAULT_RULES },
     nextWindowId: 1,
     windows: {},
+    widgetSettings: {},
   };
 }
 
@@ -120,7 +123,19 @@ export function normalize(raw: unknown): Config {
     : 1;
   const nextWindowId = Math.max(maxId + 1, Number.isInteger(raw.nextWindowId) ? (raw.nextWindowId as number) : 1);
 
-  return { version: 1, workspaces, active, rules, nextWindowId, windows };
+  const widgetSettings: Record<string, Record<string, string>> = {};
+  if (isObject(raw.widgetSettings)) {
+    for (const [widget, values] of Object.entries(raw.widgetSettings)) {
+      if (!isObject(values)) continue;
+      const clean: Record<string, string> = {};
+      for (const [key, value] of Object.entries(values)) {
+        if (typeof value === "string") clean[key] = value;
+      }
+      widgetSettings[widget] = clean;
+    }
+  }
+
+  return { version: 1, workspaces, active, rules, nextWindowId, windows, widgetSettings };
 }
 
 export function workspace(config: Config, id: number): Workspace {
