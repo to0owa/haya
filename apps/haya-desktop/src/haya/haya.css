@@ -108,7 +108,7 @@
 .haya-bar { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); flex-shrink: 0; color: var(--quiet); font-size: 11px; box-sizing: border-box; }
 .haya-bar-top { height: var(--control-size); border-bottom: 1px solid var(--line); background: var(--chrome); }
 .haya-bar-bottom { height: 26px; border-top: 1px solid var(--line); background: var(--chrome); }
-.haya-bar-actions { display: flex; align-items: center; gap: var(--space-1); margin-left: auto; }
+.haya-bar-actions { display: flex; align-items: center; gap: var(--haya-chrome-gap); margin-left: auto; }
 .haya-status-kind { color: var(--amber); text-transform: uppercase; letter-spacing: .04em; }
 .haya-status-title { color: var(--muted); }
 .haya-status-spacer { flex: 1; }
@@ -213,13 +213,13 @@
    --haya-chrome-h: derived. Bar height and side strip width are equal, so bands match.
    Change --haya-bar-pad or --haya-btn-h and every toolbar follows. */
 :root {
-  --haya-bar-pad: 8px;
-  --haya-item-pad: 8px;
-  --haya-btn-h: 24px;
+  --haya-bar-pad: 5px;
+  --haya-item-pad: 5px;
+  --haya-btn-h: 22px;
   --haya-chrome-h: calc(var(--haya-btn-h) + var(--haya-bar-pad) * 2);
   --haya-chrome-font: 11px;
-  --haya-icon: 15px;
-  --haya-chrome-gap: 12px;
+  --haya-icon: 14px;
+  --haya-chrome-gap: var(--haya-bar-pad);
   --haya-chrome-pad: var(--haya-bar-pad);
   --haya-btn-pad-x: 10px;      /* horizontal room inside text buttons */
 }
@@ -292,3 +292,16 @@
 .haya-pager { display: flex; align-items: center; gap: var(--space-1); color: var(--quiet); font-size: 11px; }
 .haya-pager-spacer { flex: 1; }
 .haya-panel-header { display: flex; align-items: center; height: var(--haya-chrome-h); padding: 0 var(--space-3); color: var(--text); font-size: 12px; font-weight: 600; }
+
+/* ---- Theme picker: grouped Dark and Light, each row shows swatches and the default tag ---- */
+.haya-swatch { display: inline-flex; align-items: center; flex-shrink: 0; }
+.haya-swatch-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px var(--line2); }
+.haya-swatch-dot + .haya-swatch-dot { margin-left: -2px; }
+.haya-theme-picker { position: fixed; bottom: calc(var(--haya-chrome-h) + 4px); left: calc(var(--haya-chrome-h) + 4px); z-index: 40; width: 232px; padding: 6px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); box-shadow: 0 12px 32px #0006; }
+.haya-theme-group-label { padding: 6px 8px 4px; color: var(--quiet); font-size: 11px; }
+.haya-theme-divider { height: 1px; margin: 4px 0; background: var(--line); }
+.haya-theme-row { display: flex; align-items: center; gap: var(--haya-chrome-gap); width: 100%; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
+.haya-theme-row:hover { background: var(--hover); color: var(--text); }
+.haya-theme-row.is-on { background: var(--selected); color: var(--text); }
+.haya-theme-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haya-theme-default { color: var(--quiet); font-size: 11px; }

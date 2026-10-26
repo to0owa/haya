@@ -13,10 +13,12 @@
   import Details from "../haya/windows/DetailsWindow.svelte";
   import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
+  import { initTheme } from "../haya/theme/theme.svelte";
 
   let ready = $state(false);
 
   onMount(async () => {
+    initTheme();
     await loadWorkspaces();
     ready = true;
   });
