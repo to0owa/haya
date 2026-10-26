@@ -5,6 +5,17 @@
   import Toasts from "../haya/Toasts.svelte";
   import { handleKey, snapshot, wm } from "../haya/wm/store.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+
+  // Drag the window from any titlebar spot that is not a button. Double-click toggles maximize.
+  function onTitlebarDown(event: MouseEvent) {
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    if (event.detail === 2) {
+      getCurrentWindow().toggleMaximize();
+    } else {
+      getCurrentWindow().startDragging();
+    }
+  }
 
   let ready = $state(false);
 
@@ -27,7 +38,7 @@
 <svelte:window onkeydown={onKey} />
 
 <div class="app">
-  <div class="haya-titlebar" data-tauri-drag-region>
+  <div class="haya-titlebar" onmousedown={onTitlebarDown} role="presentation">
     <Bar part="top" />
   </div>
 
