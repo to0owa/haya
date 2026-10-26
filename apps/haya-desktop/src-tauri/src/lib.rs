@@ -72,6 +72,32 @@ fn pty_close(terminals: State<'_, Terminals>, id: u32) -> Result<(), String> {
     Ok(())
 }
 
+/// Path of the saved workspace layout, next to the connection profiles.
+fn workspaces_path() -> Result<std::path::PathBuf, String> {
+    let home = std::env::var("HOME").map_err(|_| "HOME is not set".to_string())?;
+    Ok(std::path::PathBuf::from(home).join("Library/Application Support/Haya/workspaces.json"))
+}
+
+/// Returns the saved layout as JSON, or None on first launch. The frontend validates it.
+#[tauri::command]
+fn workspaces_load() -> Result<Option<String>, String> {
+    let path = workspaces_path()?;
+    match std::fs::read_to_string(path) {
+        Ok(text) => Ok(Some(text)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+#[tauri::command]
+fn workspaces_save(json: String) -> Result<(), String> {
+    let path = workspaces_path()?;
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(path, json).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -81,6 +107,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             pty_spawn,
             pty_write,
+            workspaces_load,
+            workspaces_save,
             pty_resize,
             pty_close,
             db::db_profiles,

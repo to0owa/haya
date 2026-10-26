@@ -112,3 +112,20 @@
 .wm-window { position: absolute; overflow: hidden; background: var(--bg); }
 .wm-window.is-focused { outline: 1px solid var(--line2, var(--line)); outline-offset: -1px; }
 .wm-placeholder { padding: var(--space-3); color: var(--quiet); font-size: 12px; }
+
+/* Bars: top (workspaces, actions, layout) and bottom (status). */
+.haya-bar { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); flex-shrink: 0; color: var(--quiet); font-size: 11px; box-sizing: border-box; }
+.haya-bar-top { height: var(--control-size); border-bottom: 1px solid var(--line); background: var(--chrome); }
+.haya-bar-bottom { height: 26px; border-top: 1px solid var(--line); background: var(--chrome); }
+.haya-ws-picker { display: flex; align-items: center; gap: 2px; }
+.haya-ws { min-width: 24px; height: 24px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: var(--quiet); font-size: 12px; }
+.haya-ws:hover { background: var(--hover); color: var(--text); }
+.haya-ws.is-occupied { color: var(--muted); }
+.haya-ws.is-active { background: var(--selected); color: var(--text); }
+.haya-bar-actions { display: flex; align-items: center; gap: var(--space-1); margin-left: auto; }
+.haya-layout { text-transform: none; }
+.haya-status-kind { color: var(--amber); text-transform: uppercase; letter-spacing: .04em; }
+.haya-status-title { color: var(--muted); }
+.haya-status-spacer { flex: 1; }
+.haya-status-cycle { border: 0; background: transparent; color: var(--quiet); font-size: 11px; }
+.haya-status-cycle:hover { color: var(--text); }

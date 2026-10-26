@@ -148,8 +148,24 @@ export function handleKey(event: KeyboardEvent): boolean {
   return true;
 }
 
-// First launch: start with the windows the default ide layout places (connections left, terminal bottom).
-if (Object.keys(wm.config.windows).length === 0) {
-  open("connections");
-  open("terminal");
+/** Opens the windows the default ide layout places (connections left, terminal bottom) on first launch. */
+export function ensureDefaultWindows() {
+  if (Object.keys(wm.config.windows).length === 0) {
+    open("connections");
+    open("terminal");
+  }
+}
+
+/** Replaces the state with a saved snapshot. Instances without a window are dropped. */
+export function hydrate(config: Config, instances: Record<number, Instance>) {
+  wm.config = config;
+  const kept: Record<number, Instance> = {};
+  for (const id of Object.keys(config.windows).map(Number)) {
+    kept[id] = instances[id] ?? { title: defaultTitle(config.windows[id]) };
+  }
+  wm.instances = kept;
+}
+
+export function snapshot(): string {
+  return JSON.stringify({ config: wm.config, instances: wm.instances });
 }
