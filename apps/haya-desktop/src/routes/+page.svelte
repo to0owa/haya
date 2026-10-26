@@ -6,8 +6,8 @@
   import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
   import Explorer from "../haya/Explorer.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
-  import ChromeBar from "../haya/chrome/ChromeBar.svelte";
-  import ChromeButton from "../haya/chrome/ChromeButton.svelte";
+  import Toolbar from "../haya/templates/Toolbar.svelte";
+  import Button from "../haya/components/Button.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -48,11 +48,11 @@
 
   <div class="haya-body">
     <!-- Side edges sit outside the stage, in the frame's gutter. Future left and right toolbars go here. -->
-    <ChromeBar edge="left" label="Left toolbar">
-      <ChromeButton label="Explorer (⌘B)" active={wm.explorerOpen} onclick={toggleExplorer}>
+    <Toolbar edge="left" label="Left toolbar">
+      <Button label="Explorer (⌘B)" active={wm.explorerOpen} onclick={toggleExplorer}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></svg>
-      </ChromeButton>
-    </ChromeBar>
+      </Button>
+    </Toolbar>
 
     {#if wm.explorerOpen}
       <Explorer />
@@ -62,11 +62,11 @@
       <Tiles />
     </div>
 
-    <ChromeBar edge="right" label="Right toolbar">
-      <ChromeButton label="Details (⇧⌘B)" active={wm.rightOpen} onclick={toggleRight}>
+    <Toolbar edge="right" label="Right toolbar">
+      <Button label="Details (⇧⌘B)" active={wm.rightOpen} onclick={toggleRight}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></svg>
-      </ChromeButton>
-    </ChromeBar>
+      </Button>
+    </Toolbar>
 
     {#if wm.rightOpen}
       <aside class="haya-right" aria-label="Details panel">

@@ -1,6 +1,17 @@
 # Haya layout
 
-All toolbar bands are `ChromeBar` (`src/haya/chrome/`) and all controls are `ChromeButton`.
+## Layering
+
+Components follow two layers, the same as a web project:
+
+- **`src/haya/templates/`** — parent layers. Layout wrappers that other components are placed into.
+  Example: `Toolbar.svelte` (a band with edge top/bottom/left/right). Future: `AppShell`, `Stage`, `SidePanel`, `WindowFrame`.
+- **`src/haya/components/`** — child primitives. Small pieces with no layout opinion.
+  Example: `Button.svelte`. Future: `Icon`, `Chip`, `Tab`, `Badge`.
+
+Rule: a template never styles its children's internals. A component never positions itself in the layout.
+
+All toolbar bands are `Toolbar` (`templates/`) and all toolbar controls are `Button` (`components/`).
 Sizes come from one token set in `src/haya/haya.css`:
 
 | Token | Value | Meaning |
