@@ -23,8 +23,8 @@
 </script>
 
 {#if part === "top"}
-<div class="haya-bar haya-bar-top" role="toolbar" aria-label="Workspaces and layout">
-  <div class="haya-ws-picker" role="tablist" aria-label="Workspaces">
+<div class="haya-bar haya-bar-top" role="toolbar" aria-label="Workspaces and layout" data-tauri-drag-region>
+  <div class="haya-ws-picker" role="tablist" aria-label="Workspaces" data-tauri-drag-region>
     {#each Array.from({ length: WORKSPACE_COUNT }, (_, i) => i + 1) as id (id)}
       <button
         class="haya-ws"
@@ -38,7 +38,7 @@
     {/each}
   </div>
 
-  <div class="haya-bar-actions">
+  <div class="haya-bar-actions" data-tauri-drag-region>
     {#each actions as action (action.label)}
       <button class="haya-button" onclick={action.run}>{action.label}</button>
     {/each}
