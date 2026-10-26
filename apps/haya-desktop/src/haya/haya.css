@@ -41,9 +41,6 @@
 .haya-status { display: flex; align-items: center; gap: var(--space-3); height: var(--control-size); padding: 0 var(--space-3); border-top: 1px solid var(--line); background: var(--chrome); color: var(--quiet); font-size: 11px; flex-shrink: 0; }
 .haya-status .spacer { flex: 1; }
 .haya-status .accent { color: var(--amber); }
-.haya-button { height: 24px; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font-size: 11px; }
-.haya-button:hover:not(:disabled) { background: var(--hover); color: var(--text); }
-.haya-button:disabled { opacity: .38; }
 
 /* Details panel fields (inspector) */
 .haya-fields { display: flex; flex-direction: column; gap: 10px; padding: var(--space-3); }
@@ -103,12 +100,6 @@
 
 /* Workspace area: tiles from computeTiles, each tile has a tab strip above its windows. */
 .wm-area { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
-.wm-tabs { position: absolute; display: flex; align-items: stretch; gap: 2px; padding: 0 var(--space-1); border-bottom: 1px solid var(--line); background: var(--chrome); box-sizing: border-box; overflow: hidden; }
-.wm-tab { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 0 var(--space-2); border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wm-tab:hover { color: var(--text); }
-.wm-tab.is-active { color: var(--text); box-shadow: inset 0 -1px 0 var(--accent); }
-.wm-tab-close { color: var(--quiet); }
-.wm-tab-close:hover { color: var(--text); }
 .wm-window { position: absolute; overflow: hidden; background: var(--bg); }
 .wm-window.is-focused { outline: 1px solid var(--line2, var(--line)); outline-offset: -1px; }
 .wm-placeholder { padding: var(--space-3); color: var(--quiet); font-size: 12px; }
@@ -117,13 +108,7 @@
 .haya-bar { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-2); flex-shrink: 0; color: var(--quiet); font-size: 11px; box-sizing: border-box; }
 .haya-bar-top { height: var(--control-size); border-bottom: 1px solid var(--line); background: var(--chrome); }
 .haya-bar-bottom { height: 26px; border-top: 1px solid var(--line); background: var(--chrome); }
-.haya-ws-picker { display: flex; align-items: center; gap: 2px; }
-.haya-ws { min-width: 24px; height: 24px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: var(--quiet); font-size: 12px; }
-.haya-ws:hover { background: var(--hover); color: var(--text); }
-.haya-ws.is-occupied { color: var(--muted); }
-.haya-ws.is-active { background: var(--selected); color: var(--text); }
 .haya-bar-actions { display: flex; align-items: center; gap: var(--space-1); margin-left: auto; }
-.haya-layout { text-transform: none; }
 .haya-status-kind { color: var(--amber); text-transform: uppercase; letter-spacing: .04em; }
 .haya-status-title { color: var(--muted); }
 .haya-status-spacer { flex: 1; }
@@ -136,10 +121,7 @@
 .haya-titlebar .haya-bar-top { height: 100%; border: 0; background: transparent; padding: 0; width: 100%; }
 
 /* Window panels: rounded, separated by gaps. */
-.wm-tabs { border: 1px solid var(--line); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--chrome); }
 .wm-window { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-.wm-tabs, .wm-window { box-sizing: border-box; }
-.wm-tabs { padding: 0 var(--space-2); border-bottom: 1px solid var(--line); }
 .wm-window { margin-top: 0; }
 .wm-window.is-focused { border-color: var(--line2, var(--line)); }
 
@@ -168,14 +150,12 @@
 .haya-titlebar { border-bottom: 0; }
 .haya-bar-bottom { background: var(--haya-frame); border: 0; }
 .haya-stage { background: var(--haya-stage); border: 0; border-radius: var(--haya-radius); }
-.wm-tabs { background: var(--haya-stage); border: 0; border-radius: var(--haya-radius) var(--haya-radius) 0 0; }
 .wm-window { background: var(--haya-window); border: 0; border-radius: var(--haya-radius); }
 .wm-window.is-focused { outline: 0; }
 
 /* Compact chrome: titlebar 32px, status bar 22px, controls 20px. */
 .haya-titlebar { height: 32px; padding-left: 80px; padding-right: 6px; }
 .haya-titlebar .haya-bar-top { gap: 4px; }
-.haya-ws { min-width: 20px; height: 20px; padding: 0 5px; font-size: 11px; }
 .haya-bar-top .haya-button { height: 20px; padding: 0 6px; font-size: 11px; }
 .haya-bar-top { height: 32px; }
 .haya-bar-bottom { height: 22px; font-size: 10px; padding: 0 var(--space-2); gap: var(--space-2); }
@@ -195,8 +175,6 @@
 .haya-bar-bottom .haya-status-cycle { font-size: 11px; }
 
 /* Explorer panel: sits directly left of the stage, no border and no background, so it reads as part of the frame. */
-.haya-explorer { width: 240px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-right: 8px; background: transparent; border: 0; }
-.haya-explorer .side-scroll { overflow-y: auto; }
 
 /* ---- Chrome tokens: change these to resize every toolbar at once. ---- */
 :root {
@@ -214,24 +192,17 @@
 .haya-titlebar { padding-right: var(--haya-chrome-pad); }
 .haya-edge-left { width: var(--haya-chrome-h); }
 
-.haya-ws, .haya-bar-top .haya-button, .haya-bar-bottom .haya-status-cycle { height: var(--haya-btn-h); font-size: var(--haya-chrome-font); }
-.haya-ws { min-width: var(--haya-btn-h); padding: 0 6px; }
 .haya-bar-top .haya-button { padding: 0 8px; }
-.haya-edge-left .chrome-control { width: var(--haya-btn-h); height: var(--haya-btn-h); min-width: var(--haya-btn-h); }
 
 .haya-titlebar svg, .haya-edge svg, .haya-bar svg {
   width: var(--haya-icon);
   height: var(--haya-icon);
 }
-.haya-titlebar .chrome-control, .haya-edge .chrome-control { padding: 0; }
 
 /* Right panel: mirrors the explorer on the left. Borderless and transparent, beside the stage. */
-.haya-right { width: 280px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-left: 8px; background: transparent; border: 0; }
-.haya-right .side-scroll { overflow-y: auto; }
 
 /* Side toolbars get a little more room than the top bar, for icon breathing space. */
 :root { --haya-edge-btn: 24px; --haya-edge-icon: 15px; }
-.haya-edge .chrome-control { width: var(--haya-edge-btn); height: var(--haya-edge-btn); min-width: var(--haya-edge-btn); }
 .haya-edge svg { width: var(--haya-edge-icon); height: var(--haya-edge-icon); }
 
 /* ---- Toolbar system (single source of truth) ----
@@ -257,10 +228,7 @@
 .haya-titlebar { padding-right: var(--haya-bar-pad); }
 
 .haya-edge-left, .haya-edge-right { width: var(--haya-chrome-h); padding: var(--haya-bar-pad) 0; gap: 0; }
-.haya-edge .chrome-control { width: var(--haya-btn-h); height: var(--haya-btn-h); min-width: var(--haya-btn-h); margin: var(--haya-item-pad) 0; }
 
-.haya-ws, .haya-bar-top .haya-button, .haya-bar-bottom .haya-status-cycle { height: var(--haya-btn-h); }
-.haya-ws { min-width: var(--haya-btn-h); }
 
 .haya-titlebar svg, .haya-edge svg, .haya-bar svg { width: var(--haya-icon); height: var(--haya-icon); }
 
@@ -268,10 +236,44 @@
 .haya-chrome { display: flex; align-items: center; box-sizing: border-box; background: var(--haya-frame); font-size: var(--haya-chrome-font); color: var(--quiet); }
 .haya-chrome-top, .haya-chrome-bottom { height: var(--haya-chrome-h); width: 100%; padding: 0 var(--haya-bar-pad); gap: var(--haya-chrome-gap); }
 .haya-chrome-left, .haya-chrome-right { width: var(--haya-chrome-h); height: 100%; flex-direction: column; justify-content: flex-start; padding: var(--haya-bar-pad) 0; gap: 0; }
-.haya-chrome-btn { display: inline-flex; align-items: center; justify-content: center; width: var(--haya-btn-h); height: var(--haya-btn-h); min-width: var(--haya-btn-h); padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); }
 .haya-chrome-left .haya-chrome-btn, .haya-chrome-right .haya-chrome-btn { margin: var(--haya-item-pad) 0; }
-.haya-chrome-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
-.haya-chrome-btn.is-on { background: var(--selected); color: var(--text); }
-.haya-chrome-btn:disabled { opacity: .38; }
-.haya-chrome-btn svg { width: var(--haya-icon); height: var(--haya-icon); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.haya-chrome-btn .panel-icon-fill { fill: currentColor; }
+
+/* ---- Component classes (one definition each) ---- */
+.haya-icon { width: var(--haya-icon); height: var(--haya-icon); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+.haya-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--haya-btn-h); border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: var(--haya-chrome-font); white-space: nowrap; }
+.haya-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.haya-btn:disabled { opacity: .38; }
+.haya-btn.is-on { background: var(--selected); color: var(--text); }
+.haya-btn-icon { width: var(--haya-btn-h); min-width: var(--haya-btn-h); padding: 0; }
+.haya-btn-text { padding: 0 8px; border: 1px solid var(--line); }
+.haya-btn-chip { min-width: var(--haya-btn-h); padding: 0 6px; color: var(--quiet); }
+.haya-btn-chip.is-on { color: var(--text); }
+
+.haya-tab { display: inline-flex; align-items: center; gap: 6px; height: 100%; max-width: 220px; padding: 0 var(--space-2); color: var(--muted); font-size: 12px; cursor: pointer; }
+.haya-tab:hover { color: var(--text); }
+.haya-tab.is-selected { color: var(--text); box-shadow: inset 0 -1px 0 var(--accent); }
+.haya-tab-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haya-tab-close { display: inline-flex; color: var(--quiet); }
+.haya-tab-close:hover { color: var(--text); }
+.haya-tab-close .haya-icon { width: 12px; height: 12px; }
+
+.haya-side-panel { width: 240px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: transparent; border: 0; }
+.haya-side-left { padding-right: 8px; }
+.haya-side-right { width: 280px; padding-left: 8px; }
+.haya-side-panel .side-scroll { overflow-y: auto; }
+
+/* Sidebar rows: one component for group heads, sub-groups, and items. */
+.haya-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 30px; padding: 4px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 13px; text-align: left; cursor: pointer; }
+.haya-row:hover { background: var(--hover); color: var(--text); }
+.haya-row.is-selected { background: var(--selected); color: var(--text); }
+.haya-row-head { color: var(--text); font-weight: 600; }
+.haya-row-group { padding-left: 16px; font-size: 12px; }
+.haya-row-item { padding-left: 22px; font-size: 12px; }
+.haya-row-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1px solid var(--line2, var(--line)); border-radius: 6px; font-size: 9px; letter-spacing: -.02em; color: var(--muted); flex-shrink: 0; }
+.haya-row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haya-row-count, .haya-row-meta { color: var(--quiet); font-size: 11px; white-space: nowrap; }
+.haya-row-chevron { display: inline-flex; color: var(--quiet); transition: transform 120ms ease-out; }
+.haya-row-chevron.is-open { transform: rotate(90deg); }
+.haya-row-chevron .haya-icon { width: 12px; height: 12px; }
+.haya-empty { padding: 6px 10px; color: var(--quiet); font-size: 12px; }

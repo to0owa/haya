@@ -1,6 +1,7 @@
 <script lang="ts">
   import { activeWorkspace, type WindowKind } from "../../model";
   import { close, open, wm } from "../../store.svelte";
+  import Button from "../../../components/Button.svelte";
 
   // Actions depend on the focused window. Only actions that exist are shown.
   const focused = $derived(activeWorkspace(wm.config).focus);
@@ -16,6 +17,6 @@
 
 <div class="haya-bar-actions">
   {#each actions as action (action.label)}
-    <button class="haya-button" onclick={action.run}>{action.label}</button>
+    <Button label={action.label} onclick={action.run}>{action.label}</Button>
   {/each}
 </div>

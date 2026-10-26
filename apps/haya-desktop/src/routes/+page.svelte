@@ -1,25 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import AppShell from "../haya/templates/AppShell.svelte";
+  import Stage from "../haya/templates/Stage.svelte";
+  import SidePanel from "../haya/templates/SidePanel.svelte";
+  import Toolbar from "../haya/templates/Toolbar.svelte";
+  import Button from "../haya/components/Button.svelte";
+  import Icon from "../haya/components/Icon.svelte";
   import Tiles from "../haya/wm/Tiles.svelte";
   import Bar from "../haya/wm/Bar.svelte";
   import Toasts from "../haya/Toasts.svelte";
-  import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
   import Explorer from "../haya/Explorer.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
-  import Toolbar from "../haya/templates/Toolbar.svelte";
-  import Button from "../haya/components/Button.svelte";
+  import { handleKey, snapshot, toggleExplorer, toggleRight, wm } from "../haya/wm/store.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
-  import { getCurrentWindow } from "@tauri-apps/api/window";
-
-  // Drag the window from any titlebar spot that is not a button. Double-click toggles maximize.
-  function onTitlebarDown(event: MouseEvent) {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
-    if (event.detail === 2) {
-      getCurrentWindow().toggleMaximize();
-    } else {
-      getCurrentWindow().startDragging();
-    }
-  }
 
   let ready = $state(false);
 
@@ -33,60 +26,52 @@
     snapshot();
     if (ready) scheduleSave();
   });
-
-  function onKey(event: KeyboardEvent) {
-    handleKey(event);
-  }
 </script>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={(event) => handleKey(event)} />
 
-<div class="app">
-  <div class="haya-titlebar" onmousedown={onTitlebarDown} role="presentation">
+<AppShell>
+  {#snippet titlebar()}
     <Bar part="top" />
-  </div>
+  {/snippet}
 
-  <div class="haya-body">
-    <!-- Side edges sit outside the stage, in the frame's gutter. Future left and right toolbars go here. -->
+  {#snippet leftEdge()}
     <Toolbar edge="left" label="Left toolbar">
-      <Button label="Explorer (⌘B)" active={wm.explorerOpen} onclick={toggleExplorer}>
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></svg>
+      <Button variant="icon" label="Explorer (⌘B)" active={wm.explorerOpen} onclick={toggleExplorer}>
+        <Icon name="panel-left" />
       </Button>
     </Toolbar>
+  {/snippet}
 
+  {#snippet leftPanel()}
     {#if wm.explorerOpen}
-      <Explorer />
+      <SidePanel side="left" label="Explorer"><Explorer /></SidePanel>
     {/if}
+  {/snippet}
 
-    <div class="haya-stage">
+  {#snippet stage()}
+    <Stage>
       <Tiles />
-    </div>
+    </Stage>
+  {/snippet}
 
+  {#snippet rightPanel()}
+    {#if wm.rightOpen}
+      <SidePanel side="right" label="Details"><Details /></SidePanel>
+    {/if}
+  {/snippet}
+
+  {#snippet rightEdge()}
     <Toolbar edge="right" label="Right toolbar">
-      <Button label="Details (⇧⌘B)" active={wm.rightOpen} onclick={toggleRight}>
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M15 3v18" /></svg>
+      <Button variant="icon" label="Details (⇧⌘B)" active={wm.rightOpen} onclick={toggleRight}>
+        <Icon name="panel-right" />
       </Button>
     </Toolbar>
+  {/snippet}
 
-    {#if wm.rightOpen}
-      <aside class="haya-right" aria-label="Details panel">
-        <Details />
-      </aside>
-    {/if}
-  </div>
+  {#snippet bottom()}
+    <Bar part="bottom" />
+  {/snippet}
+</AppShell>
 
-  <!-- Status bar lives in the frame, below the stage, not inside it. -->
-  <Bar part="bottom" />
-
-  <Toasts />
-</div>
-
-<style>
-  :global(body) { overflow: hidden; }
-  .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0; box-sizing: border-box; }
-  /* Side toolbars share the chrome thickness: 32px, the same as the titlebar and status bar. */
-  .haya-edge-left { display: flex; flex-direction: column; align-items: center; }
-
-  .haya-edge-right { display: flex; flex-direction: column; align-items: center; }
-  .is-on { background: var(--selected); color: var(--text); }
-</style>
+<Toasts />

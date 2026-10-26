@@ -6,6 +6,7 @@
   import { activeWorkspace } from "./model";
   import { close, focus, wm } from "./store.svelte";
   import { computeTiles, type Rect } from "./layouts";
+  import Tab from "../components/Tab.svelte";
 
   const TAB_H = 30;
   const GAP = 8;
@@ -50,10 +51,7 @@
     {@const box = inset(tile.rect)}
     <div class="wm-tabs" style="left:{box.x}px;top:{box.y}px;width:{box.w}px;height:{TAB_H}px" role="tablist">
       {#each tile.windows as id (id)}
-        <button class="wm-tab" class:is-active={tile.active === id} role="tab" aria-selected={tile.active === id} onclick={() => focus(id)}>
-          {label(id)}
-          <span class="wm-tab-close" role="button" tabindex="-1" onclick={(e) => { e.stopPropagation(); close(id); }}>×</span>
-        </button>
+        <Tab label={label(id)} selected={tile.active === id} onselect={() => focus(id)} onclose={() => close(id)} />
       {/each}
     </div>
   {/each}

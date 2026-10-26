@@ -1,6 +1,7 @@
 <script lang="ts">
   import { activeWorkspace, type WindowKind } from "../../model";
   import { focus, wm } from "../../store.svelte";
+  import Button from "../../../components/Button.svelte";
 
   const ws = $derived(activeWorkspace(wm.config));
   const kind = $derived<WindowKind | null>(ws.focus === null ? null : wm.config.windows[ws.focus] ?? null);
@@ -22,5 +23,5 @@
 <span class="haya-status-spacer"></span>
 <span>{ws.windows.length} window{ws.windows.length === 1 ? "" : "s"}</span>
 {#if ws.windows.length > 1}
-  <button class="haya-status-cycle" onclick={cycle}>next</button>
+  <Button variant="text" label="Next window" onclick={cycle}>next</Button>
 {/if}

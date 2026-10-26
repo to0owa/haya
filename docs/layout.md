@@ -42,3 +42,23 @@ Rules:
 2. Panels (Explorer, Details) sit directly beside the stage with no border or background.
 3. The stage is a rounded inset panel. Windows inside it are rounded and separated by the gap.
 4. Traffic lights sit in the titlebar at `trafficLightPosition` in `tauri.conf.json` (y = 23 for a 40px titlebar).
+
+## Component inventory
+
+| Layer | File | Used for |
+|---|---|---|
+| template | `templates/AppShell.svelte` | window frame: titlebar, body, status bar, drag handling |
+| template | `templates/Toolbar.svelte` | any toolbar band (top, bottom, left, right) |
+| template | `templates/Stage.svelte` | rounded workspace panel |
+| template | `templates/SidePanel.svelte` | borderless explorer or details panel beside the stage |
+| component | `components/Button.svelte` | every button (variants: icon, text, chip) |
+| component | `components/Icon.svelte` | every icon (geometry defined once, named) |
+| component | `components/Tab.svelte` | tab in a strip |
+| component | `components/Row.svelte` | sidebar row (head, group, item) |
+
+## Strict rules (checked by hand before each commit)
+1. No raw `<button>` or `<svg>` outside `components/` and `templates/`. Use `Button`, `Icon`, `Row`, `Tab`.
+2. No layout markup in routes. `+page.svelte` only composes templates and state.
+3. One definition per class: component styles live in `haya.css` under their component name.
+4. Inline `style=` only for values computed at render time (tile positions, grid widths).
+5. A file over about 150 lines is split before it grows further.

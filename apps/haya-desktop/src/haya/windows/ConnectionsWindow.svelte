@@ -3,6 +3,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { notify, notifyDesktop } from "../notify.svelte";
   import { openTable } from "../wm/store.svelte";
+  import Row from "../components/Row.svelte";
 
   type Profile = { name: string; dialect: string; host: string; port: number; user: string; database: string };
   type Schema = { name: string; tables: string[] | null; expanded: boolean };
@@ -44,44 +45,24 @@
 
 <div class="side-scroll">
   <div class="side-list-content">
-    <div class="project-list">
-      <div class="project-group selected">
-        <button class="project-head selected" onclick={() => (openConnections = !openConnections)}>
-          <span class="project-icon">DB</span>
-          <span class="project-name">Connections</span>
-          <span class="project-count">{profiles.length}</span>
-          <svg class="project-chevron" class:open={openConnections} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-        </button>
-        {#if openConnections}
-          <div class="project-tasks">
-            {#if profiles.length === 0}<div class="project-empty">No connections yet.</div>{/if}
-            {#each profiles as profile (profile.name)}
-              <button class="side-item task-row" class:selected={active === profile.name} onclick={() => connect(profile.name)}>
-                <span class="project-icon small">{initials(profile.name)}</span>
-                <span class="side-item-title">{profile.name}</span>
-                <span class="side-item-meta">{profile.dialect === "cratedb" ? "CrateDB" : "Postgres"}</span>
-              </button>
+    <Row kind="head" label="Connections" badge={String(profiles.length)} expanded={openConnections} onclick={() => (openConnections = !openConnections)} />
+    {#if openConnections}
+      {#if profiles.length === 0}<div class="haya-empty">No connections yet.</div>{/if}
+      {#each profiles as profile (profile.name)}
+        <Row kind="item" label={profile.name} meta={profile.dialect === "cratedb" ? "CrateDB" : "Postgres"} selected={active === profile.name} onclick={() => connect(profile.name)}>
+          {initials(profile.name)}
+        </Row>
+      {/each}
+      {#if active}
+        {#each schemas as schema, index (schema.name)}
+          <Row kind="group" label={schema.name} expanded={schema.expanded} onclick={() => toggle(index)} />
+          {#if schema.expanded}
+            {#each schema.tables ?? [] as table (table)}
+              <Row kind="item" label={table} onclick={() => openTable(schema.name, table)} />
             {/each}
-            {#if active}
-              {#each schemas as schema, index (schema.name)}
-                <div class="task-group">
-                  <button class="task-group-head" type="button" aria-expanded={schema.expanded} onclick={() => toggle(index)}>
-                    <span>{schema.name}</span>
-                    <svg class="project-chevron" class:open={schema.expanded} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-                  </button>
-                  {#if schema.expanded}
-                    {#each schema.tables ?? [] as table (table)}
-                      <button class="side-item task-row table-row" onclick={() => openTable(schema.name, table)}>
-                        <span class="side-item-title">{table}</span>
-                      </button>
-                    {/each}
-                  {/if}
-                </div>
-              {/each}
-            {/if}
-          </div>
-        {/if}
-      </div>
-    </div>
+          {/if}
+        {/each}
+      {/if}
+    {/if}
   </div>
 </div>
