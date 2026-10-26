@@ -233,3 +233,33 @@
 :root { --haya-edge-btn: 24px; --haya-edge-icon: 15px; }
 .haya-edge .chrome-control { width: var(--haya-edge-btn); height: var(--haya-edge-btn); min-width: var(--haya-edge-btn); }
 .haya-edge svg { width: var(--haya-edge-icon); height: var(--haya-edge-icon); }
+
+/* ---- Toolbar system (single source of truth) ----
+   --haya-bar-pad : global toolbar padding. Top and bottom bars use it on the sides;
+                    side toolbars use it on top and bottom. Same value everywhere.
+   --haya-item-pad: extra room around each item, so icons read as evenly spaced.
+   --haya-btn-h   : height of a toolbar control.
+   --haya-chrome-h: derived. Bar height and side strip width are equal, so bands match.
+   Change --haya-bar-pad or --haya-btn-h and every toolbar follows. */
+:root {
+  --haya-bar-pad: 8px;
+  --haya-item-pad: 4px;
+  --haya-btn-h: 24px;
+  --haya-chrome-h: calc(var(--haya-btn-h) + var(--haya-bar-pad) * 2);
+  --haya-chrome-font: 11px;
+  --haya-icon: 15px;
+  --haya-chrome-gap: 6px;
+  --haya-chrome-pad: var(--haya-bar-pad);
+}
+
+.haya-titlebar, .haya-bar-top, .haya-bar-bottom { height: var(--haya-chrome-h); font-size: var(--haya-chrome-font); }
+.haya-bar-top, .haya-bar-bottom { padding: 0 var(--haya-bar-pad); gap: var(--haya-chrome-gap); }
+.haya-titlebar { padding-right: var(--haya-bar-pad); }
+
+.haya-edge-left, .haya-edge-right { width: var(--haya-chrome-h); padding: var(--haya-bar-pad) 0; gap: 0; }
+.haya-edge .chrome-control { width: var(--haya-btn-h); height: var(--haya-btn-h); min-width: var(--haya-btn-h); margin: var(--haya-item-pad) 0; }
+
+.haya-ws, .haya-bar-top .haya-button, .haya-bar-bottom .haya-status-cycle { height: var(--haya-btn-h); }
+.haya-ws { min-width: var(--haya-btn-h); }
+
+.haya-titlebar svg, .haya-edge svg, .haya-bar svg { width: var(--haya-icon); height: var(--haya-icon); }

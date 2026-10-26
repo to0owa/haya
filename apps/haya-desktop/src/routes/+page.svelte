@@ -83,9 +83,8 @@
   :global(body) { overflow: hidden; }
   .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 8px 0 0; box-sizing: border-box; }
   /* Side toolbars share the chrome thickness: 32px, the same as the titlebar and status bar. */
-  .haya-edge-left { width: 32px; padding-top: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .haya-edge-left .chrome-control { width: 24px; height: 24px; min-width: 24px; }
-  .haya-edge-right .chrome-control { width: 24px; height: 24px; min-width: 24px; }
-  .haya-edge-right { width: 32px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .haya-edge-left { display: flex; flex-direction: column; align-items: center; }
+
+  .haya-edge-right { display: flex; flex-direction: column; align-items: center; }
   .is-on { background: var(--selected); color: var(--text); }
 </style>
