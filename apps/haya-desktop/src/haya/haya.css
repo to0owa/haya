@@ -149,3 +149,6 @@
 /* Frame: the workspace is a rounded stage inside the window; edges reserved for side toolbars. */
 .haya-stage { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; margin-left: 8px; }
 .haya-edge { flex-shrink: 0; min-height: 0; width: 0; }
+
+/* Bottom status bar sits in the frame below the stage, aligned with the side gutters. */
+.haya-bar-bottom { height: 28px; flex-shrink: 0; padding: 0 var(--space-3) 0 var(--space-3); border-top: 0; background: transparent; }

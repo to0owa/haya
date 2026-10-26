@@ -48,11 +48,13 @@
 
     <div class="haya-stage">
       <Tiles />
-      <Bar part="bottom" />
     </div>
 
     <div class="haya-edge haya-edge-right" aria-label="Right toolbar"></div>
   </div>
+
+  <!-- Status bar lives in the frame, below the stage, not inside it. -->
+  <Bar part="bottom" />
 
   <Toasts />
 </div>
