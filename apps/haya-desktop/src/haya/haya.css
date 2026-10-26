@@ -189,3 +189,7 @@
 /* Bottom gutter mirrors the titlebar: same 32px height, so the status text is centred in its band. */
 .haya-body { padding-bottom: 0; }
 .haya-bar-bottom { height: 32px; }
+
+/* One size for both bars: 32px, 11px type, controls 20px. The status bar and titlebar mirror each other. */
+.haya-bar-bottom { height: 32px; font-size: 11px; padding: 0 14px; }
+.haya-bar-bottom .haya-status-cycle { font-size: 11px; }

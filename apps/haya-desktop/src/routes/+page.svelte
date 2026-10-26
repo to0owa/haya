@@ -61,5 +61,5 @@
 
 <style>
   :global(body) { overflow: hidden; }
-  .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 8px 8px 0; box-sizing: border-box; }
+  .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 8px 0 0; box-sizing: border-box; }
 </style>
