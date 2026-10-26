@@ -27,11 +27,13 @@
 <svelte:window onkeydown={onKey} />
 
 <div class="app">
-  <div class="haya-titlebar" data-tauri-drag-region></div>
+  <div class="haya-titlebar" data-tauri-drag-region>
+    <Bar part="top" />
+  </div>
 
   <div class="haya-main-column">
-    <Bar />
     <Tiles />
+    <Bar part="bottom" />
   </div>
 
   <Toasts />
@@ -39,5 +41,5 @@
 
 <style>
   :global(body) { overflow: hidden; }
-  .haya-main-column { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; margin: 0 8px 8px 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }
+  .haya-main-column { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; margin: 0 8px 8px 8px; }
 </style>

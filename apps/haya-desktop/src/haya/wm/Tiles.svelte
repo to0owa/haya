@@ -7,7 +7,14 @@
   import { close, focus, wm } from "./store.svelte";
   import { computeTiles, type Rect } from "./layouts";
 
-  const TAB_H = 28;
+  const TAB_H = 30;
+  const GAP = 8;
+
+  /** Shrinks a tile by half the gap on every side, so neighbours are GAP apart and the edges GAP/2 from the frame. */
+  function inset(rect: Rect): Rect {
+    const h = GAP / 2;
+    return { x: rect.x + h, y: rect.y + h, w: Math.max(0, rect.w - GAP), h: Math.max(0, rect.h - GAP) };
+  }
 
   let width = $state(0);
   let height = $state(0);
@@ -17,7 +24,7 @@
       workspace: activeWorkspace(wm.config),
       kinds: wm.config.windows,
       rules: wm.config.rules,
-      area: { x: 0, y: 0, w: width, h: height } satisfies Rect,
+      area: { x: 0, y: 0, w: Math.max(0, width), h: Math.max(0, height) } satisfies Rect,
     }),
   );
 
@@ -25,7 +32,7 @@
   const placement = $derived.by(() => {
     const map: Record<number, Rect> = {};
     for (const tile of tiles) {
-      if (tile.active !== null) map[tile.active] = tile.rect;
+      if (tile.active !== null) map[tile.active] = inset(tile.rect);
     }
     return map;
   });
@@ -40,7 +47,8 @@
 
 <div class="wm-area" bind:clientWidth={width} bind:clientHeight={height}>
   {#each tiles as tile, index (index)}
-    <div class="wm-tabs" style="left:{tile.rect.x}px;top:{tile.rect.y}px;width:{tile.rect.w}px;height:{TAB_H}px" role="tablist">
+    {@const box = inset(tile.rect)}
+    <div class="wm-tabs" style="left:{box.x}px;top:{box.y}px;width:{box.w}px;height:{TAB_H}px" role="tablist">
       {#each tile.windows as id (id)}
         <button class="wm-tab" class:is-active={tile.active === id} role="tab" aria-selected={tile.active === id} onclick={() => focus(id)}>
           {label(id)}
@@ -57,7 +65,7 @@
     <div
       class="wm-window"
       class:is-focused={focusedId === id}
-      style={rect ? `left:${rect.x}px;top:${rect.y + TAB_H}px;width:${rect.w}px;height:${rect.h - TAB_H}px` : "display:none"}
+      style={rect ? `left:${rect.x}px;top:${rect.y + TAB_H}px;width:${rect.w}px;height:${Math.max(0, rect.h - TAB_H)}px` : "display:none"}
       onmousedown={() => focus(id)}
       role="presentation"
     >

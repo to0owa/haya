@@ -129,3 +129,16 @@
 .haya-status-spacer { flex: 1; }
 .haya-status-cycle { border: 0; background: transparent; color: var(--quiet); font-size: 11px; }
 .haya-status-cycle:hover { color: var(--text); }
+
+/* Titlebar doubles as the top toolbar (like Chrome). Traffic lights sit at the left. */
+.app { padding-top: 0; }
+.haya-titlebar { position: relative; z-index: 2; display: flex; align-items: center; height: 38px; flex-shrink: 0; padding-left: 84px; padding-right: 8px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.haya-titlebar .haya-bar-top { height: 100%; border: 0; background: transparent; padding: 0; width: 100%; }
+
+/* Window panels: rounded, separated by gaps. */
+.wm-tabs { border: 1px solid var(--line); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--chrome); }
+.wm-window { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.wm-tabs, .wm-window { box-sizing: border-box; }
+.wm-tabs { padding: 0 var(--space-2); border-bottom: 1px solid var(--line); }
+.wm-window { margin-top: 0; }
+.wm-window.is-focused { border-color: var(--line2, var(--line)); }

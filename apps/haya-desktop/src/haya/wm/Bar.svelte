@@ -2,6 +2,8 @@
   import { activeWorkspace, LAYOUT_NAMES, WORKSPACE_COUNT, type WindowKind } from "./model";
   import { close, focus, nextLayout, open, switchWorkspace, wm } from "./store.svelte";
 
+  let { part }: { part: "top" | "bottom" } = $props();
+
   const ws = $derived(activeWorkspace(wm.config));
   const focused = $derived(ws.focus);
   const focusedKind = $derived<WindowKind | null>(focused === null ? null : wm.config.windows[focused] ?? null);
@@ -20,6 +22,7 @@
   }
 </script>
 
+{#if part === "top"}
 <div class="haya-bar haya-bar-top" role="toolbar" aria-label="Workspaces and layout">
   <div class="haya-ws-picker" role="tablist" aria-label="Workspaces">
     {#each Array.from({ length: WORKSPACE_COUNT }, (_, i) => i + 1) as id (id)}
@@ -45,6 +48,7 @@
   </div>
 </div>
 
+{:else}
 <div class="haya-bar haya-bar-bottom" aria-label="Status">
   {#if focused !== null}
     <span class="haya-status-kind">{focusedKind}</span>
@@ -58,3 +62,4 @@
     <button class="haya-status-cycle" onclick={() => focus(ws.windows[(ws.windows.indexOf(focused ?? ws.windows[0]) + 1) % ws.windows.length])}>next</button>
   {/if}
 </div>
+{/if}
