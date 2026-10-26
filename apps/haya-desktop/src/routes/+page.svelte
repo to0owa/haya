@@ -42,9 +42,16 @@
     <Bar part="top" />
   </div>
 
-  <div class="haya-main-column">
-    <Tiles />
-    <Bar part="bottom" />
+  <div class="haya-body">
+    <!-- Side edges sit outside the stage, in the frame's gutter. Future left and right toolbars go here. -->
+    <div class="haya-edge haya-edge-left" aria-label="Left toolbar"></div>
+
+    <div class="haya-stage">
+      <Tiles />
+      <Bar part="bottom" />
+    </div>
+
+    <div class="haya-edge haya-edge-right" aria-label="Right toolbar"></div>
   </div>
 
   <Toasts />
@@ -52,5 +59,5 @@
 
 <style>
   :global(body) { overflow: hidden; }
-  .haya-main-column { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; margin: 0 8px 8px 8px; }
+  .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 8px 8px 0; box-sizing: border-box; }
 </style>
