@@ -3,7 +3,8 @@
   import Tiles from "../haya/wm/Tiles.svelte";
   import Bar from "../haya/wm/Bar.svelte";
   import Toasts from "../haya/Toasts.svelte";
-  import { handleKey, snapshot, wm } from "../haya/wm/store.svelte";
+  import { handleKey, snapshot, toggleExplorer, wm } from "../haya/wm/store.svelte";
+  import Explorer from "../haya/Explorer.svelte";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
   import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -44,7 +45,15 @@
 
   <div class="haya-body">
     <!-- Side edges sit outside the stage, in the frame's gutter. Future left and right toolbars go here. -->
-    <div class="haya-edge haya-edge-left" aria-label="Left toolbar"></div>
+    <nav class="haya-edge haya-edge-left" aria-label="Left toolbar">
+      <button class="chrome-control" class:is-on={wm.explorerOpen} aria-label="Explorer" aria-pressed={wm.explorerOpen} title="Explorer (⌘B)" onclick={toggleExplorer}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18" /></svg>
+      </button>
+    </nav>
+
+    {#if wm.explorerOpen}
+      <Explorer />
+    {/if}
 
     <div class="haya-stage">
       <Tiles />
@@ -62,4 +71,6 @@
 <style>
   :global(body) { overflow: hidden; }
   .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 8px 0 0; box-sizing: border-box; }
+  .haya-edge-left { width: 40px; padding-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .is-on { background: var(--selected); color: var(--text); }
 </style>

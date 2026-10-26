@@ -23,7 +23,12 @@ export const wm = $state({
   config: createDefaultConfig() as Config,
   instances: {} as Record<number, Instance>,
   details: null as DetailsRow | null,
+  explorerOpen: false,
 });
+
+export function toggleExplorer() {
+  wm.explorerOpen = !wm.explorerOpen;
+}
 
 let terminalCount = 0;
 
@@ -137,6 +142,7 @@ export function handleKey(event: KeyboardEvent): boolean {
     "\\": nextLayout,
     "]": () => ratio(0.05),
     "[": () => ratio(-0.05),
+    b: toggleExplorer,
     "=": () => masters(1),
     "-": () => masters(-1),
   };
