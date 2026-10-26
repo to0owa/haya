@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
-  import Button from "./components/Button.svelte";
+  import Pager from "./components/Pager.svelte";
 
   type Query = {
     columns: string[];
@@ -62,9 +62,14 @@
 <div class="haya-grid">
   <div class="haya-grid-bar">
     {#if error}<span class="is-error">{error}</span>
-    {:else if result}{result.rows.length} rows{result.truncated ? " (capped)" : ""} · {result.elapsed_ms} ms · rows {offset + 1}–{offset + result.rows.length}
-      <span class="spacer"></span><Button label="Previous page" disabled={offset === 0} onclick={() => load(Math.max(0, offset - PAGE))}>Prev</Button>
-      <Button label="Next page" disabled={result.rows.length < PAGE} onclick={() => load(offset + PAGE)}>Next</Button>
+    {:else if result}
+      <Pager
+        summary={`${result.rows.length} rows${result.truncated ? " (capped)" : ""} · ${result.elapsed_ms} ms · rows ${offset + 1}–${offset + result.rows.length}`}
+        canPrev={offset > 0}
+        canNext={result.rows.length >= PAGE}
+        onprev={() => load(Math.max(0, offset - PAGE))}
+        onnext={() => load(offset + PAGE)}
+      />
     {:else}Loading…{/if}
   </div>
 

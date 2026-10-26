@@ -4,6 +4,7 @@
   import { notify, notifyDesktop } from "../notify.svelte";
   import { openTable } from "../wm/store.svelte";
   import Row from "../components/Row.svelte";
+  import EmptyState from "../components/EmptyState.svelte";
 
   type Profile = { name: string; dialect: string; host: string; port: number; user: string; database: string };
   type Schema = { name: string; tables: string[] | null; expanded: boolean };
@@ -47,7 +48,7 @@
   <div class="side-list-content">
     <Row kind="head" label="Connections" badge={String(profiles.length)} expanded={openConnections} onclick={() => (openConnections = !openConnections)} />
     {#if openConnections}
-      {#if profiles.length === 0}<div class="haya-empty">No connections yet.</div>{/if}
+      {#if profiles.length === 0}<EmptyState text="No connections yet. Add one in Settings." />{/if}
       {#each profiles as profile (profile.name)}
         <Row kind="item" label={profile.name} meta={profile.dialect === "cratedb" ? "CrateDB" : "Postgres"} selected={active === profile.name} onclick={() => connect(profile.name)}>
           {initials(profile.name)}

@@ -280,3 +280,14 @@
 
 /* Body row: left toolbar, left panel, stage, right panel, right toolbar. Lives here, not in a page, so every shell gets it. */
 .haya-body { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0; box-sizing: border-box; }
+
+/* Shared pieces: field, empty state, toast, pager, panel header. */
+.haya-field { display: flex; flex-direction: column; gap: 4px; }
+.haya-field-name { color: var(--quiet); font-size: 11px; }
+.haya-field-value { padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+.haya-field-value.is-null { color: var(--quiet); }
+.haya-fields { display: flex; flex-direction: column; gap: 10px; padding: var(--space-3); }
+.haya-empty { padding: 8px 10px; color: var(--quiet); font-size: 12px; }
+.haya-pager { display: flex; align-items: center; gap: var(--space-1); color: var(--quiet); font-size: 11px; }
+.haya-pager-spacer { flex: 1; }
+.haya-panel-header { display: flex; align-items: center; height: var(--haya-chrome-h); padding: 0 var(--space-3); color: var(--text); font-size: 12px; font-weight: 600; }

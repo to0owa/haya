@@ -7,6 +7,7 @@
   import { close, focus, wm } from "./store.svelte";
   import { computeTiles, type Rect } from "./layouts";
   import Tab from "../components/Tab.svelte";
+  import EmptyState from "../components/EmptyState.svelte";
 
   const TAB_H = 30;
   const GAP = 8;
@@ -76,7 +77,7 @@
       {:else if kind === "details"}
         <Details />
       {:else}
-        <div class="wm-placeholder">{kind} — coming soon</div>
+        <EmptyState text={`${kind} is not built yet.`} />
       {/if}
     </div>
   {/each}
