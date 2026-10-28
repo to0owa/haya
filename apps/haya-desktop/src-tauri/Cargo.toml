@@ -32,7 +32,7 @@ tauri-plugin-notification = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "tiff"] }
-webp-animation = "0.10.0"
+webp-animation = { version = "0.10.0", features = ["static"] }
 toml = "0.8"
 
 [target.'cfg(target_os = "macos")'.dependencies]
