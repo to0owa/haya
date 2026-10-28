@@ -40,6 +40,9 @@ jobs:
             exit 1
           fi
 
+      - name: Install libwebp (webp-animation links the system library)
+        run: brew install webp
+
       - name: Install frontend dependencies
         working-directory: apps/haya-desktop
         run: bun install --frozen-lockfile
