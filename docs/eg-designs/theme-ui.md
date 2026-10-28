@@ -355,7 +355,7 @@ Interface
 - Case-insensitive file systems: a file named `Foo.toml` never loads as id `foo` (name mismatch warning). On save, `hard_link` fails with `AlreadyExists` only when the exact name exists. On macOS APFS, a save of `foo` when `Foo.toml` exists fails with `Exists` through the same kernel check, because the names collide at the file system level. That is the intended result: the user gets a choice, not a silent overwrite.
 
 ## Verification criteria
-Rust (`cargo test -p haya-desktop`, with `tempfile`):
+Rust (`cargo test -p haya`, with `tempfile`):
 - Valid file loads. Bad id, bad color, unknown mode, reserved id, name too long (by scalar count), name with control characters, blank name, mismatched file name, invalid TOML, a missing `tokens` table, and a file over 256 KiB each produce one warning and are skipped.
 - A file named `haya-dark.toml` with id `haya-dark`: skipped with the reserved-id warning.
 - Unknown top-level key in a valid file: loads, no warning.

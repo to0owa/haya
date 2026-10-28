@@ -3899,17 +3899,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "haya-db"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "futures-util",
- "tokio",
- "tokio-postgres",
-]
-
-[[package]]
-name = "haya-desktop"
+name = "haya"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -3932,6 +3922,16 @@ dependencies = [
  "tokio",
  "toml 0.8.23",
  "webp-animation",
+]
+
+[[package]]
+name = "haya-db"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "futures-util",
+ "tokio",
+ "tokio-postgres",
 ]
 
 [[package]]
