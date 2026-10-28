@@ -32,3 +32,29 @@
 
 ## Shell
 - [ ] Stable code-signing identity for dev builds, so the Keychain "Always Allow" choice sticks.
+
+## Projects (design in docs/projects.md)
+- [ ] Rust storage: read and write `projects/<id>/project.json` and `windows.json`.
+- [ ] Default project made from the current layout, on first launch.
+- [ ] Project switcher in the bottom-left corner, with search and groups.
+- [ ] Idle timer (15 min, 1 h, 4 h, never), toast with Look, Keep, Kill.
+- [ ] Resource usage per terminal in the toast, then busy detection and Kill confirmation.
+- [ ] Browser window, its per-project data store, and its size cap.
+- Data layer is done: `wm/projects.ts` with parsing, id safety, and idle logic, and tests.
+
+## Toolbar and window follow-ups
+- [ ] Verify the glass style and the "Keluarkan dari workspace" checkbox on screen.
+- [ ] Top bar overflow: tab strip and logo priority, verified on a narrow window.
+- [ ] Row edit and add in the details panel: confirm the flow on a real PostgreSQL table.
+- [ ] Zoom: verify the PTY size changes with ⌘+ and ⌘-.
+- [ ] Table and terminal zoom values persist across restarts.
+
+## Next session: update system
+- [ ] In-app update badge at the bottom right ("Update Available: <version>"), with a popover: version, size, release date, Skip, Later, Install and Relaunch, View Release Notes. Reference: screenshot in the chat on 2026-10-28.
+- [ ] Phase 1: UI and state machine (none, available, skipped, later, downloading, ready), fed by a stub source behind a dev flag.
+- [ ] Phase 2: real check with `tauri-plugin-updater`. Needs a GitHub remote for the repo, a release pipeline that publishes signed artifacts and `latest.json`, and an updater key pair (private key kept as a CI secret, never in the repo).
+- [ ] macOS signing and notarization (Developer ID). Without it Gatekeeper may block an updated app. Ties to the code-signing item above.
+- [ ] Decide whether "Skip" is per version and "Later" resets on the next launch.
+
+## Preferences style (with the theme pass)
+- [ ] Restyle the Preferences dialog to the squircle language: rounded dialog with frosted background, squircle nav items with the shared active state, round close button, tinted section cards, bolder headings. See docs/eg-designs/theme-ui.md "Revision 5".

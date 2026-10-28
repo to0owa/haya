@@ -12,11 +12,20 @@
   import Explorer from "../haya/Explorer.svelte";
   import Connections from "../haya/windows/ConnectionsWindow.svelte";
   import Details from "../haya/windows/DetailsWindow.svelte";
-  import { handleKey, snapshot, wm } from "../haya/wm/store.svelte";
+  import { snapshot, wm } from "../haya/wm/store.svelte";
+  import { handleKey } from "../haya/wm/keymap.svelte";
+  import { activeWorkspace } from "../haya/wm/model";
   import { loadWorkspaces, scheduleSave } from "../haya/wm/persist";
   import { initTheme } from "../haya/theme/theme.svelte";
+  import { checkForUpdate } from "../haya/updater.svelte";
 
   let ready = $state(false);
+
+  // Details describe a table row, so the panel is only meaningful while a table window is focused.
+  const detailsAvailable = $derived.by(() => {
+    const ws = activeWorkspace(wm.config);
+    return ws.focus !== null && wm.config.windows[ws.focus] === "table";
+  });
 
   // The WebView menu (Reload, Inspect) does not belong in a desktop app. Text fields keep theirs.
   function suppressNativeMenu(event: MouseEvent) {
@@ -29,6 +38,8 @@
     initTheme();
     await loadWorkspaces();
     ready = true;
+    // Packaged builds look for a newer release shortly after start. In dev the feed has nothing to offer.
+    if (!import.meta.env.DEV) setTimeout(() => checkForUpdate(true), 5000);
   });
 
   // Save after every change to the layout or the window list, once the saved state is loaded.
@@ -64,7 +75,7 @@
   {/snippet}
 
   {#snippet rightPanel()}
-    {#if wm.rightOpen}
+    {#if wm.rightOpen && detailsAvailable}
       <SidePanel side="right" label="Details"><Details /></SidePanel>
     {/if}
   {/snippet}

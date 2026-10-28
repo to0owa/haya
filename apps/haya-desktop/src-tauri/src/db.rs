@@ -93,3 +93,35 @@ pub async fn db_page(
 pub async fn db_execute(state: State<'_, DbState>, sql: String, row_cap: usize) -> Result<QueryDto, String> {
     active(&state).await?.execute(&sql, row_cap).await.map(Into::into).map_err(err)
 }
+
+/// A cell as the frontend sends it: a column name and its text value, or null.
+#[derive(serde::Deserialize)]
+pub struct Cell {
+    pub column: String,
+    pub value: Option<String>,
+}
+
+#[tauri::command]
+pub async fn db_primary_key(state: State<'_, DbState>, schema: String, table: String) -> Result<Vec<String>, String> {
+    active(&state).await?.primary_key(&schema, &table).await.map_err(err)
+}
+
+#[tauri::command]
+pub async fn db_update_row(
+    state: State<'_, DbState>,
+    schema: String,
+    table: String,
+    key: Vec<Cell>,
+    changes: Vec<Cell>,
+) -> Result<(), String> {
+    let key: Vec<_> = key.into_iter().map(|c| (c.column, c.value)).collect();
+    let changes: Vec<_> = changes.into_iter().map(|c| (c.column, c.value)).collect();
+    active(&state).await?.update_row(&schema, &table, &key, &changes).await.map_err(err)
+}
+
+#[tauri::command]
+pub async fn db_insert_row(state: State<'_, DbState>, schema: String, table: String, values: Vec<Cell>) -> Result<(), String> {
+    let values: Vec<_> = values.into_iter().map(|c| (c.column, c.value)).collect();
+    active(&state).await?.insert_row(&schema, &table, &values).await.map_err(err)
+}
+

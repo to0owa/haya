@@ -36,6 +36,7 @@ fn pty_spawn(app: AppHandle, terminals: State<'_, Terminals>, rows: u16, cols: u
         *next
     };
     terminals.sessions.lock().map_err(|e| e.to_string())?.insert(id, session);
+    eprintln!("[pty-debug] spawn id={id}");
 
     // Pump output to the frontend. Stops when the session is removed.
     let handle = app.clone();
@@ -68,7 +69,11 @@ fn pty_resize(terminals: State<'_, Terminals>, id: u32, rows: u16, cols: u16) ->
 
 #[tauri::command]
 fn pty_close(terminals: State<'_, Terminals>, id: u32) -> Result<(), String> {
-    terminals.sessions.lock().map_err(|e| e.to_string())?.remove(&id);
+    // Drop the session after the lock is released: dropping it waits for the shell to exit.
+    let removed = terminals.sessions.lock().map_err(|e| e.to_string())?.remove(&id);
+    eprintln!("[pty-debug] close id={id} found={}", removed.is_some());
+    drop(removed);
+    eprintln!("[pty-debug] close id={id} done");
     Ok(())
 }
 
@@ -98,17 +103,63 @@ fn workspaces_save(json: String) -> Result<(), String> {
     std::fs::write(path, json).map_err(|e| e.to_string())
 }
 
+mod themes;
+mod wallpaper;
+
+/// A web view configuration with Apple's Writing Tools off, or None when this macOS has no such setting.
+/// Writing Tools draws a Siri glyph at the cursor of any text input, and a terminal counts as one: xterm reads keys
+/// through a hidden textarea. The setting has to be on the configuration, before the web view exists.
+#[cfg(target_os = "macos")]
+fn writing_tools_off() -> Option<objc2::rc::Retained<objc2_web_kit::WKWebViewConfiguration>> {
+    use objc2::{msg_send, sel};
+    /// NSWritingToolsBehaviorNone
+    const BEHAVIOR_NONE: isize = -1;
+    let mtm = objc2::MainThreadMarker::new()?;
+    let config = unsafe { objc2_web_kit::WKWebViewConfiguration::new(mtm) };
+    // macOS 15 and later. Earlier systems have no Writing Tools to turn off.
+    let supported: bool = unsafe { msg_send![&*config, respondsToSelector: sel!(setWritingToolsBehavior:)] };
+    if !supported {
+        return None;
+    }
+    let _: () = unsafe { msg_send![&*config, setWritingToolsBehavior: BEHAVIOR_NONE] };
+    Some(config)
+}
+
+/// Builds the main window from tauri.conf.json. Tauri would build it itself (`create` is false there),
+/// but then the web view could not be given its own configuration.
+fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let config = app.config().app.windows.first().cloned().ok_or("tauri.conf.json defines no window")?;
+    let builder = tauri::WebviewWindowBuilder::from_config(app.handle(), &config)?;
+    #[cfg(target_os = "macos")]
+    let builder = match writing_tools_off() {
+        Some(web_view) => builder.with_webview_configuration(web_view),
+        None => builder,
+    };
+    builder.build()?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(Terminals::default())
         .manage(DbState::default())
+        .manage(themes::ThemeStore::default())
+        .setup(|app| create_main_window(app))
         .invoke_handler(tauri::generate_handler![
             pty_spawn,
             pty_write,
             workspaces_load,
             workspaces_save,
+            wallpaper::wallpaper_import,
+            wallpaper::wallpaper_path,
+            wallpaper::wallpaper_remove,
+            themes::themes_load,
+            themes::theme_save,
+            themes::theme_delete,
             pty_resize,
             pty_close,
             db::db_profiles,
@@ -116,7 +167,10 @@ pub fn run() {
             db::db_connect,
             db::db_tables,
             db::db_page,
-            db::db_execute
+            db::db_execute,
+            db::db_primary_key,
+            db::db_update_row,
+            db::db_insert_row
         ])
         .run(tauri::generate_context!())
         .expect("error while running Haya");

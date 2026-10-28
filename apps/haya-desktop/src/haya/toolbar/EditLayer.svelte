@@ -57,7 +57,7 @@
   }
 
   function measureAnchors() {
-    anchors = PARTS.flatMap((part) => {
+    anchors = PARTS.flatMap((part): AddAnchor[] => {
       const bar = document.querySelector<HTMLElement>(`.haya-chrome[data-part="${part}"]`);
       if (!bar) return [];
       const r = bar.getBoundingClientRect();

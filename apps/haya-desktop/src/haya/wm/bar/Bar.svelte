@@ -26,6 +26,8 @@
   // The saved order for this bar, or the default. Hidden widgets stay in the list, so their slot keeps its index.
   const raw = $derived(wm.config.barLayout[part] ?? DEFAULT_BARS[part]);
   const hidden = (id: string) => wm.config.hiddenWidgets.includes(id);
+  // A bar with no visible items is hidden and takes no space. Edit mode keeps bars visible so items can be dropped in.
+  const empty = $derived(raw.every((id) => !isSpacerId(id) && (!isWidget(id) || hidden(id))));
 
   // The context menu lists every real widget. Spacers are sized from their own menu.
   const ALL = Object.keys(WIDGETS).filter((id) => id !== "spacer") as WidgetId[];
@@ -56,6 +58,7 @@
   const GAP = 4;
   const MORE_WIDTH = 28;
   const SPACER_MIN = 24;
+  const TABS_MIN = 160;
 
   // The first raw index that overflows, or null when everything fits.
   let cut = $state<number | null>(null);
@@ -138,7 +141,12 @@
       if (!(slot instanceof HTMLElement) || slot.dataset.index === undefined) continue;
       const index = Number(slot.dataset.index);
       const spec = parseSpacer(slot.dataset.id ?? "");
-      widths[index] = spec ? (spec.px ?? SPACER_MIN) : slotSize(slot);
+      // Flexible items are counted at their minimum. Their measured size includes the free space they took,
+      // which would make the estimate say the bar is full when it is not.
+      const id = slot.dataset.id ?? "";
+      if (spec) widths[index] = spec.px ?? SPACER_MIN;
+      else if (id === "tabs") widths[index] = TABS_MIN;
+      else widths[index] = slotSize(slot);
     }
 
     const style = getComputedStyle(el);
@@ -200,6 +208,10 @@
 <svelte:window onmousedown={onpointer} onkeydown={onkey} />
 
 
+{#if empty && !edit.on}
+  <!-- An empty bar keeps the same gap as a shown one, so the stage never touches the window edge. -->
+  <div class="haya-empty-bar haya-empty-{part}" aria-hidden="true"></div>
+{:else}
 <div class="haya-bar-hit" role="presentation" oncontextmenu={openMenu}>
   <Toolbar edge={part} label={LABELS[part]}>
     <!-- Slots never change the layout. Edit mode draws its outlines and badges over them (see toolbar/EditLayer). -->
@@ -225,6 +237,7 @@
     {/if}
   </Toolbar>
 </div>
+{/if}
 
 {#if cut !== null && more}
   <div

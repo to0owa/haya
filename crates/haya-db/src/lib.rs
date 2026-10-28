@@ -60,6 +60,19 @@ pub fn quote_ident(name: &str) -> String {
     format!("\"{}\"", name.replace('"', "\"\""))
 }
 
+/// A SQL string literal. Single quotes are doubled, so user text cannot end the literal early.
+pub fn literal(text: &str) -> String {
+    format!("'{}'", text.replace('\'', "''"))
+}
+
+/// A cell value as SQL: NULL, or a quoted literal that the column type will coerce.
+pub fn value_literal(value: &Option<String>) -> String {
+    match value {
+        Some(text) => literal(text),
+        None => "NULL".to_string(),
+    }
+}
+
 /// An open connection to one database.
 pub struct Connection {
     dialect: Dialect,
@@ -136,6 +149,79 @@ impl Connection {
         );
         // A page is bounded by `limit`, so keeping every row it returns is safe.
         self.run(&sql, limit as usize).await
+    }
+
+    /// Column names of the primary key, in key order. Empty when the table has none.
+    pub async fn primary_key(&self, schema: &str, table: &str) -> Result<Vec<String>> {
+        if self.dialect() != Dialect::Postgres {
+            return Ok(Vec::new());
+        }
+        let sql = format!(
+            "SELECT kcu.column_name FROM information_schema.table_constraints tc \
+             JOIN information_schema.key_column_usage kcu \
+               ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema \
+             WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_schema = {} AND tc.table_name = {} \
+             ORDER BY kcu.ordinal_position",
+            literal(schema),
+            literal(table)
+        );
+        self.single_column(&sql).await
+    }
+
+    /// Updates one row, found by its primary key. Values are text, or None for NULL.
+    /// Only PostgreSQL writes are supported for now.
+    pub async fn update_row(
+        &self,
+        schema: &str,
+        table: &str,
+        key: &[(String, Option<String>)],
+        changes: &[(String, Option<String>)],
+    ) -> Result<()> {
+        self.require_write()?;
+        anyhow::ensure!(!key.is_empty(), "this table has no primary key, so rows cannot be edited");
+        anyhow::ensure!(!changes.is_empty(), "nothing to change");
+        let set = changes
+            .iter()
+            .map(|(col, value)| format!("{} = {}", quote_ident(col), value_literal(value)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let where_ = key
+            .iter()
+            .map(|(col, value)| match value {
+                Some(_) => format!("{} = {}", quote_ident(col), value_literal(value)),
+                None => format!("{} IS NULL", quote_ident(col)),
+            })
+            .collect::<Vec<_>>()
+            .join(" AND ");
+        let sql = format!("UPDATE {}.{} SET {set} WHERE {where_}", quote_ident(schema), quote_ident(table));
+        self.run_write(&sql).await
+    }
+
+    /// Inserts one row. Columns left out are not sent, so the database defaults apply.
+    pub async fn insert_row(&self, schema: &str, table: &str, values: &[(String, Option<String>)]) -> Result<()> {
+        self.require_write()?;
+        let cols = values.iter().map(|(c, _)| quote_ident(c)).collect::<Vec<_>>().join(", ");
+        let vals = values.iter().map(|(_, v)| value_literal(v)).collect::<Vec<_>>().join(", ");
+        let sql = if values.is_empty() {
+            format!("INSERT INTO {}.{} DEFAULT VALUES", quote_ident(schema), quote_ident(table))
+        } else {
+            format!("INSERT INTO {}.{} ({cols}) VALUES ({vals})", quote_ident(schema), quote_ident(table))
+        };
+        self.run_write(&sql).await
+    }
+
+    fn require_write(&self) -> Result<()> {
+        anyhow::ensure!(self.dialect() == Dialect::Postgres, "editing rows is only supported for PostgreSQL for now");
+        Ok(())
+    }
+
+    /// Runs one write inside a transaction, so a failed statement changes nothing.
+    async fn run_write(&self, sql: &str) -> Result<()> {
+        let wrapped = format!("BEGIN; {sql}; COMMIT;");
+        self.client.batch_execute(&wrapped).await.map_err(|e| {
+            let _ = self.client.batch_execute("ROLLBACK;");
+            anyhow::anyhow!(e.to_string())
+        })
     }
 
     /// Runs user-authored SQL exactly as written. Keeps at most `row_cap` rows in memory.
@@ -225,5 +311,22 @@ mod tests {
     #[test]
     fn keeps_spaces_and_dots_inside_quotes() {
         assert_eq!(quote_ident("my table.v2"), "\"my table.v2\"");
+    }
+}
+
+#[cfg(test)]
+mod literal_tests {
+    use super::*;
+
+    #[test]
+    fn quotes_are_doubled_so_text_cannot_end_the_literal() {
+        assert_eq!(literal("o'brien"), "'o''brien'");
+        assert_eq!(literal("x'; DROP TABLE t; --"), "'x''; DROP TABLE t; --'");
+    }
+
+    #[test]
+    fn none_is_sql_null() {
+        assert_eq!(value_literal(&None), "NULL");
+        assert_eq!(value_literal(&Some("a".into())), "'a'");
     }
 }

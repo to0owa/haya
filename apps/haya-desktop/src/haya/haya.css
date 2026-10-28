@@ -1,5 +1,9 @@
 /* Haya-specific layout built on Mestero tokens (app.css). No hardcoded colors. */
 
+/* A native window does not rubber-band. Without this, dragging past the top or bottom edge
+   scrolls the web page and shows the webview's white backing behind it. */
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; background: var(--bg); }
+
 .haya-shell { display: flex; height: 100vh; width: 100vw; overflow: hidden; background: var(--bg); color: var(--text); }
 .haya-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
@@ -49,7 +53,8 @@
 .haya-wordmark { display: block; width: auto; height: auto; background: none; mask: none; -webkit-mask: none; color: var(--text); font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
 
 /* In-app notifications, stacked bottom-right */
-.haya-toasts { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: 50; display: flex; flex-direction: column; gap: var(--space-2); width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+/* Toasts sit above every dialog and menu, Preferences included, so an error is never hidden behind what caused it. */
+.haya-toasts { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: 100; display: flex; flex-direction: column; gap: var(--space-2); width: min(360px, calc(100vw - 32px)); pointer-events: none; }
 .haya-toast { pointer-events: auto; display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--line2, var(--line)); border-left: 3px solid var(--quiet); border-radius: 8px; background: var(--popup); color: var(--text); font-size: 12px; box-shadow: 0 8px 24px #0005; }
 .haya-toast.is-error { border-left-color: var(--red); }
 .haya-toast.is-success { border-left-color: var(--green); }
@@ -202,13 +207,22 @@
   --haya-traffic-w: 76px;      /* reserved corner for the native window buttons; nothing else goes here */
   --haya-frame-gap: 6px;       /* space between the top toolbar and the body (side toolbars and stage) */
   --haya-item-pad: 4px;
-  --haya-btn-h: 24px;
+  --haya-btn-h: 22px;
   --haya-chrome-h: calc(var(--haya-btn-h) + var(--haya-bar-pad) * 2);
   --haya-chrome-font: 11px;
-  --haya-icon: 16px;
+  --haya-icon: 14px;
   --haya-chrome-gap: var(--haya-edge-gap);
   --haya-chrome-pad: var(--haya-bar-pad);
   --haya-btn-pad-x: 10px;      /* horizontal room inside text buttons */
+  /* One state set for every control: buttons, workspace chips, tabs, and the Preferences chips.
+     Rest, hover, active (selected), and focus look the same everywhere. The expanded wallpaper changes these tokens only. */
+  --haya-control-radius: 8px;
+  --haya-state-rest: transparent;
+  --haya-state-hover: var(--hover);
+  --haya-state-active: var(--selected);
+  --haya-state-fg: var(--quiet);
+  --haya-state-fg-hover: var(--text);
+  --haya-state-fg-active: var(--text-strong);
 }
 
 .haya-titlebar, .haya-bar-top, .haya-bar-bottom { height: var(--haya-chrome-h); font-size: var(--haya-chrome-font); }
@@ -229,14 +243,14 @@
 /* ---- Component classes (one definition each) ---- */
 .haya-icon { width: var(--haya-icon); height: var(--haya-icon); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-.haya-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--haya-btn-h); border: 0; border-radius: 10px; corner-shape: squircle; background: transparent; color: var(--muted); font-size: var(--haya-chrome-font); white-space: nowrap; }
-.haya-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.haya-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--haya-btn-h); border: 0; border-radius: var(--haya-control-radius); corner-shape: squircle; background: var(--haya-state-rest); color: var(--haya-state-fg); font-size: var(--haya-chrome-font); white-space: nowrap; }
+.haya-btn:hover:not(:disabled) { background: var(--haya-state-hover); color: var(--haya-state-fg-hover); }
+.haya-btn:focus-visible { outline: 1px solid var(--haya-state-fg); outline-offset: -1px; }
 .haya-btn:disabled { opacity: .38; }
-.haya-btn.is-on { background: var(--selected); color: var(--text); }
+.haya-btn.is-on { background: var(--haya-state-active); color: var(--haya-state-fg-active); }
 .haya-btn-icon { width: var(--haya-btn-h); min-width: var(--haya-btn-h); padding: 0; }
-.haya-btn-text { padding: 0 var(--haya-btn-pad-x); border: 1px solid var(--line); }
-.haya-btn-chip { min-width: var(--haya-btn-h); padding: 0 6px; color: var(--quiet); }
-.haya-btn-chip.is-on { color: var(--text); }
+.haya-btn-text { padding: 0 var(--haya-btn-pad-x); }
+.haya-btn-chip { min-width: var(--haya-btn-h); padding: 0 6px; }
 
 
 .haya-side-panel { width: 240px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: transparent; border: 0; }
@@ -287,20 +301,136 @@
 .haya-theme-default { color: var(--quiet); font-size: 11px; }
 
 /* ---- Preferences dialog ---- */
-.haya-prefs-scrim { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: #0008; }
-.haya-prefs { display: grid; grid-template-columns: 200px 1fr; width: min(720px, calc(100vw - 32px)); height: min(480px, calc(100vh - 64px)); border-radius: 12px; background: var(--popup); box-shadow: 0 24px 64px #0008; overflow: hidden; }
-.haya-prefs-nav { display: flex; flex-direction: column; gap: 2px; padding: 16px 10px; background: var(--chrome); }
-.haya-prefs-title { padding: 0 8px 10px; color: var(--text-strong); font-size: 13px; font-weight: 600; }
-.haya-prefs-link { display: flex; align-items: center; gap: var(--haya-chrome-gap); height: 30px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
-.haya-prefs-link:hover { background: var(--hover); color: var(--text); }
-.haya-prefs-link.is-on { background: var(--selected); color: var(--text); }
-.haya-prefs-body { display: flex; flex-direction: column; min-width: 0; padding: 16px 20px; overflow: auto; }
+/* The scrim is a light frosted glass: a faint tint with a soft blur of whatever sits behind the dialog. */
+.haya-prefs-scrim { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(0, 0, 0, 0.2); }
+/* The blur is its own layer, not the scrim's. A backdrop filter on the scrim would hide the page from the dialog's glass. */
+.haya-prefs-blur { position: absolute; inset: 0; pointer-events: none; backdrop-filter: blur(2px) saturate(120%); -webkit-backdrop-filter: blur(2px) saturate(120%); }
+/* The section rail is icon-only by default. Expanding it widens the column and shows the labels. */
+.haya-prefs { display: grid; grid-template-columns: 40px 1fr; width: min(720px, calc(100vw - 32px)); height: min(480px, calc(100vh - 64px)); box-sizing: border-box; padding: 8px; gap: 4px; border-radius: 24px; corner-shape: squircle; overflow: hidden;
+  /* Rail motion: one duration and one curve for the column, the pills, and the labels. Layout moves never overshoot. */
+  --rail-dur: 320ms; --rail-ease: cubic-bezier(.32, .72, 0, 1); --rail-step: 30ms;
+  /* Collapsing, the column waits for the last pill, so it never cuts one off. --n is the section count, set from the markup. */
+  transition: grid-template-columns var(--rail-dur) var(--rail-ease) min(calc((var(--n, 1) - 1) * var(--rail-step)), 150ms);
+  /* Glass: the fill, blur, highlight, and sheen come from the Preferences glass values (--prefs-*). */
+  background: color-mix(in srgb, var(--popup) calc(var(--prefs-alpha, 1) * 100%), transparent);
+  background-image: linear-gradient(135deg,
+    rgba(255, 255, 255, var(--prefs-sheen, 0)) 0%, rgba(255, 255, 255, calc(var(--prefs-sheen, 0) * 0.15)) 38%, rgba(255, 255, 255, 0) 58%,
+    rgba(255, 255, 255, calc(var(--prefs-sheen, 0) * 0.3)) 100%);
+  /* --glass-brightness dims what shows through the glass. Each theme sets it, so a dark theme is not washed out by a bright wallpaper. */
+  backdrop-filter: blur(var(--prefs-blur, 0px)) saturate(var(--prefs-saturation, 100%)) brightness(var(--glass-brightness, 1));
+  -webkit-backdrop-filter: blur(var(--prefs-blur, 0px)) saturate(var(--prefs-saturation, 100%)) brightness(var(--glass-brightness, 1));
+  box-shadow: 0 24px 64px #0008, inset 0 1px 0 rgba(255, 255, 255, var(--prefs-highlight, 0)), inset 0 0 0 1px rgba(255, 255, 255, calc(var(--prefs-highlight, 0) * 0.5)); }
+.haya-prefs.is-expanded { grid-template-columns: 200px 1fr; transition-delay: 0ms; }
+@media (prefers-reduced-motion: reduce) { .haya-prefs { transition: none; } }
+/* The rail fills its grid column and clips what does not fit yet, so nothing in it snaps while the column moves.
+   4px side padding leaves exactly 32px in the 40px column, so the compact pills sit centred. */
+.haya-prefs-nav { display: flex; flex-direction: column; gap: 6px; box-sizing: border-box; min-width: 0; padding: 12px 4px; overflow: hidden; background: transparent; }
+/* The toggle never moves: it stays first in the rail, and the title fades in beside it. */
+.haya-prefs-nav-head { display: flex; align-items: center; gap: 8px; min-height: 32px; margin-bottom: 6px; }
+.haya-prefs-title { color: var(--text-strong); font-size: 13px; font-weight: 600; white-space: nowrap; opacity: 0; transition: opacity 100ms ease-out; }
+.haya-prefs.is-expanded .haya-prefs-title { opacity: 1; transition: opacity 200ms ease-out 120ms; }
+.haya-prefs-toggle { display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 10px; corner-shape: squircle; background: var(--haya-state-rest); color: var(--haya-state-fg); }
+.haya-prefs-toggle:hover { background: var(--haya-state-hover); color: var(--haya-state-fg-hover); }
+/* Inset focus ring: the rail clips overflow, so an outset ring would be cut off. */
+.haya-prefs-toggle:focus-visible, .haya-prefs-link:focus-visible { outline: 2px solid var(--haya-state-fg); outline-offset: -2px; }
+/* A section is a 32px squircle pill. Expanded, the same pill stretches to the right; the icon never moves.
+   Each pill waits --i steps (capped at 150ms), so the ripple runs top-down and grows with the list on its own. */
+.haya-prefs-link { --d: min(calc(var(--i, 0) * var(--rail-step)), 150ms); display: flex; align-items: center; flex: none; box-sizing: border-box; width: 32px; height: 32px; padding: 0 9px; overflow: hidden; border: 0; border-radius: 10px; corner-shape: squircle; background: var(--haya-state-rest); color: var(--haya-state-fg); font-size: 12px; text-align: left; white-space: nowrap; }
+.haya-prefs.is-expanded .haya-prefs-link { width: 100%; }
+.haya-prefs .haya-prefs-link { transition: width var(--rail-dur) var(--rail-ease) var(--d), transform 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 160ms ease-out, color 160ms ease-out; }
+.haya-prefs .haya-prefs-link:active:not(:disabled) { transition-duration: var(--rail-dur), 90ms, 160ms, 160ms; }
+.haya-prefs-link:hover { background: var(--haya-state-hover); color: var(--haya-state-fg-hover); }
+/* The selected section is a solid squircle with an inverted icon, the same as the workspace chip. */
+.haya-prefs-link.is-on { background: var(--text-strong); color: var(--bg); }
+/* Labels leave with their pill and arrive just after it has started to stretch. */
+.haya-prefs-link-label { margin-left: 8px; opacity: 0; transition: opacity 100ms ease-out var(--d); }
+.haya-prefs.is-expanded .haya-prefs-link-label { opacity: 1; transition: opacity 200ms ease-out calc(var(--d) + 120ms); }
+@media (prefers-reduced-motion: reduce) {
+  .haya-prefs .haya-prefs-link { transition: background-color 160ms ease-out, color 160ms ease-out; }
+  .haya-prefs-title, .haya-prefs-link-label, .haya-prefs.is-expanded .haya-prefs-title, .haya-prefs.is-expanded .haya-prefs-link-label { transition: none; }
+}
+
+/* Every Preferences button springs: it squashes while pressed and overshoots back on release. */
+.haya-prefs button, .haya-prefs-file { transition: transform 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 160ms ease-out, color 160ms ease-out; }
+.haya-prefs button:active:not(:disabled), .haya-prefs-file:active { transform: scale(.88); transition-duration: 90ms, 160ms, 160ms; }
+@media (prefers-reduced-motion: reduce) {
+  .haya-prefs button, .haya-prefs-file { transition: background-color 160ms ease-out, color 160ms ease-out; }
+  .haya-prefs button:active:not(:disabled), .haya-prefs-file:active { transform: none; }
+}
+/* The content is the rounded panel. The section rail sits on the outer glass with no panel of its own. */
+.haya-prefs-body { display: flex; flex-direction: column; min-width: 0; padding: 16px 20px; border-radius: 16px; corner-shape: squircle; background: color-mix(in srgb, var(--chrome) calc(var(--prefs-alpha, 1) * 100%), transparent); overflow: auto; }
 .haya-prefs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .haya-prefs-head h2 { margin: 0; color: var(--text-strong); font-size: 15px; font-weight: 600; }
 .haya-prefs-sub { margin: 4px 0 6px; color: var(--quiet); font-size: 11px; font-weight: 500; }
+.haya-prefs-card { display: flex; flex-direction: column; gap: 12px; margin-bottom: 6px; padding: 16px; border-radius: 16px; corner-shape: squircle; background: color-mix(in srgb, var(--soft) calc(var(--prefs-alpha, 1) * 100%), transparent); }
+.haya-prefs-card-title { display: block; margin: 0; color: var(--text-strong); font-size: 13px; font-weight: 700; }
+
+/* A card that folds to its title. The chevron turns when it opens. */
+.haya-disclosure-head { display: flex; align-items: center; justify-content: space-between; width: 100%; height: var(--haya-btn-h); padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.haya-disclosure-chevron { display: grid; place-items: center; color: var(--quiet); transition: transform 320ms cubic-bezier(.34, 1.56, .64, 1); }
+.haya-disclosure-chevron svg { width: 14px; height: 14px; }
+.haya-disclosure.is-open .haya-disclosure-chevron { transform: rotate(180deg); }
+.haya-disclosure-body { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .haya-disclosure-chevron { transition: none; } }
+/* Workspace tabs sit on the panel: the selected tab shares the panel's fill, so the two read as one surface. */
+.haya-prefs-ws-group { display: flex; flex-direction: column; }
+/* The selected tab and the wallpaper panel are one surface, so they share one fill: a translucent tint that follows the
+   Preferences glass opacity. The panel has no blur of its own. A nested backdrop filter reads the page behind the dialog,
+   not the dialog's glass, so it would show a different colour from the tab, which is a plain SVG fill. */
+.haya-prefs-ws-group { --ws-surface: color-mix(in srgb, var(--inset, var(--raised)) calc(var(--prefs-alpha, 1) * 92%), transparent); }
+/* Contrast is colour only, with no borders and no shadows. The surface is --inset, the theme's own "inside a card" colour,
+   so the tab and panel stand out from the --soft card in light and dark alike without CSS that knows which theme is on. */
+/* Tabs start flush with the panel's left edge. The strip clips the first tab's left foot, so the tab's own curve forms the outer corner. */
+.haya-prefs-workspaces { position: relative; display: flex; align-items: flex-end; gap: 8px; padding: 0 8px 0 0; overflow-x: auto; }
+.haya-prefs-ws-shape { position: absolute; left: -8px; bottom: 0; width: 52px; height: 32px; fill: var(--ws-surface); pointer-events: none; transform: translateX(calc(var(--i, 0) * 44px)); transition: transform 480ms cubic-bezier(.34, 1.56, .64, 1); }
+@media (prefers-reduced-motion: reduce) { .haya-prefs-ws-shape { transition: none; } }
+.haya-prefs-ws { position: relative; z-index: 1; flex: 0 0 36px; width: 36px; height: 32px; padding: 0; border: 0; border-radius: 8px 8px 0 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; display: flex; align-items: center; justify-content: center; }
+.haya-prefs-ws:hover:not(.is-on) { background: var(--haya-state-hover); color: var(--haya-state-fg-hover); }
+.haya-prefs-ws:focus-visible { outline: 1px solid var(--haya-state-fg); outline-offset: -1px; }
+.haya-prefs-ws.is-on { color: var(--text-strong); font-weight: 700; }
+.haya-prefs-ws > span { position: relative; z-index: 1; }
+/* An unselected tab with a wallpaper shows its number as a small frosted white badge in the bottom-right corner. It stays white on both themes, so the dark number is always readable. */
+.haya-prefs-ws.has-thumb > span { position: absolute; right: 1px; bottom: 3px; width: 14px; height: 14px; padding: 0; box-sizing: border-box; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #1b1f23; font-size: 10px; font-weight: 500; line-height: 1; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7); }
+/* The selected tab's number bounces in when it opens. */
+.haya-prefs-ws.is-on > span { animation: haya-ws-bounce 480ms cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes haya-ws-bounce { from { transform: scale(0.5); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .haya-prefs-ws.is-on > span { animation: none; } }
+.haya-prefs-ws-thumb { position: absolute; top: 4px; left: 4px; width: 28px; height: 21px; aspect-ratio: 4 / 3; border-radius: 6px; object-fit: cover; transform-origin: center; transition: transform 260ms cubic-bezier(.34, 1.56, .64, 1), opacity 180ms ease-out; }
+/* The selected tab's thumbnail shrinks away; the large preview takes its place. */
+.haya-prefs-ws.is-on .haya-prefs-ws-thumb { transform: scale(0); opacity: 0; transition: transform 160ms ease-in, opacity 120ms ease-in; }
+@media (prefers-reduced-motion: reduce) { .haya-prefs-ws-thumb { transition: none; } }
+.haya-prefs-ws-panel { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; corner-shape: squircle; background: var(--ws-surface); transition: border-top-left-radius 200ms ease-out; }
+/* With the first tab selected its foot runs into the panel's left edge, so that corner goes square and the two read as one surface. */
+.haya-prefs-ws-group:has(.haya-prefs-ws:first-of-type.is-on) .haya-prefs-ws-panel { border-top-left-radius: 0; }
+@media (prefers-reduced-motion: reduce) { .haya-prefs-ws-panel { transition: none; } }
+
+/* Dropping an image on the wallpaper panel: a cover that says where the image will go. It is near opaque, so nothing under it shows through. */
+.haya-prefs-ws-panel { position: relative; }
+.haya-prefs-drop { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: inherit; corner-shape: squircle; background: color-mix(in srgb, var(--inset, var(--raised)) 97%, transparent); pointer-events: none; animation: haya-drop-in 320ms cubic-bezier(.34, 1.56, .64, 1); }
+/* A soft dashed edge marks the drop target. It is a tint of the text colour, so it stays quiet on both themes. */
+.haya-prefs-drop::before { content: ""; position: absolute; inset: 8px; border-radius: 10px; corner-shape: squircle; border: 2px dashed color-mix(in srgb, var(--text-strong) 22%, transparent); }
+.haya-prefs-drop span { color: var(--text-strong); font-size: 13px; font-weight: 600; }
+.haya-prefs-drop small { color: var(--quiet); font-size: 11px; }
+@keyframes haya-drop-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .haya-prefs-drop { animation: none; } }
+
+.haya-prefs-wallpaper { display: flex; align-items: center; gap: 16px; }
+.haya-prefs-preview { position: relative; display: flex; flex: 0 0 auto; }
+/* Remove sits as a floating red trash button on the preview's top-right corner. */
+.haya-prefs-trash { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, color-mix(in srgb, var(--red) 65%, #000) 45%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 2px 6px #0003; }
+.haya-prefs-trash svg { width: 12px; height: 12px; }
+.haya-prefs-trash:hover { filter: brightness(1.1); }
+.haya-prefs-wallpaper-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.haya-prefs-wallpaper-buttons { display: flex; align-items: center; gap: 8px; }
+.haya-prefs-wallpaper-actions .haya-prefs-check { padding: 0; }
 .haya-prefs-shortcuts { display: flex; flex-direction: column; }
 .haya-prefs-shortcut { display: flex; align-items: center; justify-content: space-between; height: 34px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 .haya-prefs-shortcut kbd { color: var(--text); font-family: inherit; font-size: 12px; }
+.haya-prefs-keybind { display: flex; align-items: center; gap: 8px; }
+.haya-prefs-key { min-width: 84px; height: var(--haya-btn-h); padding: 0 var(--haya-btn-pad-x); border: 0; border-radius: var(--haya-control-radius); corner-shape: squircle; background: var(--inset, var(--raised)); color: var(--haya-state-fg-hover); font-family: inherit; font-size: var(--haya-chrome-font); font-variant-numeric: tabular-nums; }
+.haya-prefs-key:hover { background: var(--haya-state-hover); }
+.haya-prefs-key.is-recording { background: var(--haya-state-active); color: var(--haya-state-fg-active); }
+.haya-prefs-clash { color: var(--amber); font-size: 11px; }
 .haya-theme-list { display: flex; flex-direction: column; }
 
 /* Spacer: empty gap between frame regions. The size is the frame gap token. */
@@ -311,13 +441,15 @@
 
 /* ---- Tab strip (in the top toolbar, one list per workspace) ---- */
 :root { --haya-tab-min: 96px; --haya-tab-max: 180px; }
-.haya-bar-tabs { display: flex; flex: 0 1 auto; min-width: 0; }
-.haya-tabstrip { display: flex; align-items: center; flex: 0 1 var(--haya-tabs-w); width: var(--haya-tabs-w); min-width: 0; gap: var(--haya-edge-gap); }
-.haya-tabstrip-scroll { display: flex; flex: 1; min-width: 0; gap: var(--haya-edge-gap); overflow-x: auto; scrollbar-width: none; }
+.haya-bar-tabs { display: flex; flex: 1 1 auto; min-width: 0; }
+/* The strip fills the free width like a fill spacer, with a floor so a few tabs stay readable. */
+.haya-tabstrip { display: flex; align-items: center; flex: 1 1 auto; min-width: var(--haya-tabs-min); gap: var(--haya-edge-gap); }
+.haya-tabstrip-scroll { display: flex; flex: 1 1 auto; min-width: 0; gap: var(--haya-edge-gap); overflow-x: auto; scrollbar-width: none; }
 .haya-tabstrip-scroll::-webkit-scrollbar { display: none; }
-.haya-tab { display: inline-flex; flex: 1 1 0; align-items: center; gap: 6px; min-width: var(--haya-tab-min); max-width: var(--haya-tab-max); height: var(--haya-btn-h); padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: var(--haya-chrome-font); cursor: pointer; white-space: nowrap; }
-.haya-tab:hover { background: var(--hover); color: var(--text); }
-.haya-tab.is-selected { background: var(--selected); color: var(--text); }
+.haya-tab { display: inline-flex; flex: 1 1 0; align-items: center; gap: 6px; min-width: var(--haya-tab-min); max-width: var(--haya-tab-max); height: var(--haya-btn-h); padding: 0 8px; border-radius: var(--haya-control-radius); corner-shape: squircle; background: var(--haya-state-rest); color: var(--haya-state-fg); font-size: var(--haya-chrome-font); cursor: pointer; white-space: nowrap; }
+.haya-tab:hover { background: var(--haya-state-hover); color: var(--haya-state-fg-hover); }
+.haya-tab:focus-visible { outline: 1px solid var(--haya-state-fg); outline-offset: -1px; }
+.haya-tab.is-selected { background: var(--haya-state-active); color: var(--haya-state-fg-active); }
 .haya-tab-mark { position: relative; flex-shrink: 0; width: 14px; height: 14px; }
 .haya-tab-icon, .haya-tab-close { position: absolute; inset: 0; display: grid; place-items: center; }
 .haya-tab-icon .haya-icon, .haya-tab-close .haya-icon { width: 14px; height: 14px; }
@@ -362,10 +494,103 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 /* ---- Window frame: one element per window. The border shows which window is active. ----
    overflow: hidden clips content to the border's inner edge, so the content's corners follow the radius automatically. */
 :root { --haya-active: var(--amber); }
-.wm-window { position: absolute; overflow: hidden; border: 0; border-radius: var(--haya-radius); background: var(--bg); clip-path: inset(0 round var(--haya-radius)); }
+/* The stage has a 1px border, so its inner corner radius is one pixel smaller. Windows match that inner radius. */
+.wm-window { position: absolute; overflow: hidden; border: 0; border-radius: calc(var(--haya-radius) - 1px); background: color-mix(in srgb, var(--bg) calc(var(--alpha, 1) * 100%), transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 0 0 1px rgba(255, 255, 255, 0.45); clip-path: inset(0 round calc(var(--haya-radius) - 1px)); }
 /* The active line is an overlay drawn above the content, so the terminal cannot cover it.
    Absolute and pointer-free: it never changes layout, so the window does not shift. */
-.wm-window.is-focused::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--haya-active); border-radius: inherit; pointer-events: none; z-index: 1; }
+/* Dividers between tiles. The hit area is SEAM_HIT wide. A floating pill marks it: it grows and fades in on hover,
+   and fades out when the pointer leaves. It is drawn over the gap, so it never moves the tiles. */
+.wm-seam { position: absolute; z-index: 5; touch-action: none; }
+.wm-seam.is-x { cursor: col-resize; }
+.wm-seam.is-y { cursor: row-resize; }
+/* Divider grabber, styled like the sliders in Preferences: a dark rounded track with a light thumb.
+   It is one element that Tiles.svelte moves between dividers, not a part of each divider. A divider can be replaced
+   mid-drag when a grid turns over, and a handle that belongs to it would pop in at full size on the new one.
+   Here it grows in place when it appears, shrinks when it goes, glides to the next divider, and swells a little while held.
+   It is drawn over the gap, so it never moves the tiles. */
+.wm-grabber {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  width: 11px;
+  height: 52px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  /* --gx and --gy are the centre. The percentages inside translate are of the grabber's own box, so it stays centred while it resizes.
+     Only the position along the divider goes through translate, and so can glide. The position across it is plain left or top,
+     which never eases, so the grabber stays level with the pointer while it glides. */
+  translate: -50% -50%;
+  pointer-events: none;
+  /* It fills like water: at rest it is a thin sliver lying on the divider. Showing, it swells across into the pill, then the
+     thumb fills from the middle out. Hiding runs the other way: the thumb drains, the pill thins back to a sliver, and only
+     then fades. No step is a jump in size, so nothing blinks. */
+  --swell: 340ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  --thin: 220ms cubic-bezier(0.4, 0, 0.6, 1);
+  /* Hidden, its size does not ease, so it can take the next divider's direction at once, before it starts to fill. */
+  transition: opacity 120ms ease-out 140ms, scale var(--thin) 60ms;
+}
+.wm-grabber.is-x { left: var(--gx, 0px); translate: -50% calc(var(--gy, 0px) - 50%); scale: 0.18 1; }
+.wm-grabber.is-y { top: var(--gy, 0px); translate: calc(var(--gx, 0px) - 50%) -50%; width: 52px; height: 11px; scale: 1 0.18; }
+.wm-grabber.is-on { opacity: 1; scale: 1; transition: opacity 90ms ease-out, scale var(--swell), width 220ms cubic-bezier(0.2, 0.8, 0.2, 1), height 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.wm-grabber.is-held { scale: 1.12; }
+/* The position eases only when the grabber changes dividers. While a divider is being dragged it must stay on it. */
+.wm-grabber.is-gliding { transition: opacity 90ms ease-out, scale var(--swell), width 220ms cubic-bezier(0.2, 0.8, 0.2, 1), height 220ms cubic-bezier(0.2, 0.8, 0.2, 1), translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.wm-grabber > span {
+  display: block; width: 3px; height: 32px; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  scale: 1 0;
+  transition: scale 160ms cubic-bezier(0.4, 0, 1, 1), width 220ms cubic-bezier(0.2, 0.8, 0.2, 1), height 220ms cubic-bezier(0.2, 0.8, 0.2, 1), background 120ms;
+}
+.wm-grabber.is-y > span { width: 32px; height: 3px; scale: 0 1; }
+.wm-grabber.is-on > span { scale: 1; transition: scale 300ms cubic-bezier(0.2, 0.8, 0.2, 1) 110ms, width 220ms cubic-bezier(0.2, 0.8, 0.2, 1), height 220ms cubic-bezier(0.2, 0.8, 0.2, 1), background 120ms; }
+.wm-grabber.is-held > span { background: #3478f6; }
+/* For one frame before it fills, the grabber takes its divider's place and direction with no easing at all. */
+.wm-grabber.is-snapping, .wm-grabber.is-snapping > span { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wm-grabber, .wm-grabber.is-on, .wm-grabber.is-gliding, .wm-grabber > span, .wm-grabber.is-on > span { transition: opacity 120ms linear; }
+  .wm-grabber.is-x, .wm-grabber.is-y, .wm-grabber.is-held, .wm-grabber > span, .wm-grabber.is-y > span { scale: 1; }
+}
+
+/* Focus marker: a small accent dot in the top-right corner of every window.
+   The focused window's dot grows with a small bounce; the others shrink away. It fades after three seconds. */
+/* Activity waveform in the bottom bar. Bars rise with terminal output and settle to dots when idle. */
+.haya-wave { display: inline-flex; align-items: center; gap: 2px; height: var(--haya-btn-h); padding: 0 6px; }
+.haya-wave-bar { display: block; width: 2px; border-radius: 999px; background: #8fd3ff; box-shadow: 0 0 6px rgba(143, 211, 255, 0.5); transition: height 60ms linear; }
+@media (prefers-reduced-motion: reduce) { .haya-wave-bar { transition: none; } }
+
+.wm-focus-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--haya-active);
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 180ms ease-in, opacity 220ms ease-out;
+  pointer-events: none;
+  /* xterm paints at z-index 10 and 11 inside the same window, so the dot must sit above them. */
+  z-index: 20;
+}
+.wm-focus-dot.is-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 560ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 220ms ease-out;
+}
+/* Three seconds on the same window: the dot fades to 20% and stays there. */
+.wm-focus-dot.is-active.is-faded { opacity: 0.2; transition: opacity 600ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .wm-focus-dot, .wm-focus-dot.is-active { transition: opacity 120ms linear; transform: scale(1); }
+  .wm-focus-dot { transform: scale(0); }
+  .wm-focus-dot.is-active { transform: scale(1); }
+}
 
 /* ---- Command palette ---- */
 .haya-palette-scrim { position: fixed; inset: 0; z-index: 65; display: flex; justify-content: center; align-items: flex-start; padding-top: 14vh; background: #0006; }
@@ -432,7 +657,7 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 .haya-spacer-menu { z-index: 80; }
 
 /* Default layout is left-aligned. The tab strip has a set width; a spacer is what pushes items to the far side. */
-:root { --haya-tabs-w: 480px; }
+:root { --haya-tabs-min: 160px; }
 
 /* "+" that sits at the end of each bar in edit mode. */
 .haya-add-anchor { position: fixed; z-index: 74; }
@@ -464,11 +689,151 @@ input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-sele
 
 /* A terminal window paints the terminal colour itself. FitAddon leaves a few pixels at the right and bottom,
    and this colour covers them. The window clip still rounds the corners, so nothing leaks past the frame. */
-.wm-window:has(.terminal-screen) { background: var(--terminal-bg); }
+.wm-window:has(.terminal-screen) { background: color-mix(in srgb, var(--terminal-bg) calc(var(--alpha, 1) * 100%), transparent); }
 
 .wm-window { isolation: isolate; }
+/* Windows ease to a new place and size, like water settling into a new shape: when a grid turns over, a split is reset,
+   the layout changes, or a window opens or closes. While a divider is being dragged they follow it exactly instead,
+   except for the moment the grid turns over mid-drag (.is-settling). */
+.wm-window { transition: left 300ms cubic-bezier(0.2, 0.8, 0.2, 1), top 300ms cubic-bezier(0.2, 0.8, 0.2, 1), width 300ms cubic-bezier(0.2, 0.8, 0.2, 1), height 300ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.wm-area.is-dragging:not(.is-settling) .wm-window { transition: none; }
+@media (prefers-reduced-motion: reduce) { .wm-window { transition: none; } }
 
 
 /* WebKit clips composited children (the xterm WebGL canvas) only when the rounded box is itself a mask and layer.
    Without this, the canvas paints past the corner. */
 .wm-window:has(.terminal-screen) { -webkit-mask-image: -webkit-radial-gradient(white, black); transform: translateZ(0); }
+
+/* Workspace wallpaper sits behind the tiles. Translucent windows let it show through. */
+.haya-stage.has-wallpaper { background-size: cover; background-position: center; background-repeat: no-repeat; }
+
+/* Preferences: wallpaper and opacity controls */
+/* Preferences workspace chips follow the shared control states. A wallpaper shows as the chip's background, under the number. */
+.haya-prefs-thumb { width: 96px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; corner-shape: squircle; border: 1px solid var(--line); }
+.haya-prefs-thumb-empty { display: grid; place-items: center; color: var(--quiet); font-size: 11px; }
+/* While an image imports, the preview is a placeholder: the picked image, dimmed, with a ring over it.
+   The ring fills as a GIF encodes. Before the first report, and for stills, it spins instead. */
+.haya-prefs-thumb-pending { position: relative; overflow: hidden; background: var(--selected); }
+.haya-prefs-thumb-pending img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(3px); transform: scale(1.08); opacity: .75; }
+.haya-prefs-thumb-pending::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.3); }
+.haya-prefs-ring { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: #fff; }
+.haya-prefs-ring svg { position: absolute; width: 46px; height: 46px; transform: rotate(-90deg); }
+.haya-prefs-ring circle { fill: none; stroke-width: 3; }
+.haya-prefs-ring-track { stroke: rgba(255, 255, 255, 0.3); }
+.haya-prefs-ring-arc { stroke: #fff; stroke-linecap: round; stroke-dasharray: var(--p, 25) 100; transition: stroke-dasharray 240ms linear; }
+.haya-prefs-ring span { position: relative; font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.haya-prefs-ring.is-indeterminate svg { animation: haya-ring-spin 900ms linear infinite; }
+@keyframes haya-ring-spin { to { transform: rotate(270deg); } }
+/* A spinner is a status, not decoration, so it keeps turning under reduced motion, only slower. */
+@media (prefers-reduced-motion: reduce) { .haya-prefs-ring.is-indeterminate svg { animation-duration: 2400ms; } .haya-prefs-ring-arc { transition: none; } }
+/* Choose image sits on the --raised wallpaper panel, so it takes the --selected tint to read as a button there. */
+.haya-prefs-file { position: relative; display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 16px; border: 0; border-radius: 12px; corner-shape: squircle; background: var(--selected); color: var(--text-strong); font-size: 12px; font-weight: 500; cursor: pointer; }
+.haya-prefs-file:hover { background: color-mix(in srgb, var(--selected), var(--text-strong) 8%); }
+.haya-prefs-file:focus-within { outline: 1px solid var(--haya-state-fg); outline-offset: -1px; }
+.haya-prefs-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.haya-prefs-slider { display: grid; grid-template-columns: 1fr 1.6fr 40px; align-items: center; gap: 8px; height: 30px; color: var(--muted); font-size: 12px; }
+.haya-prefs-value { text-align: right; color: var(--quiet); font-size: 11px; }
+.haya-prefs-note { color: var(--quiet); font-size: 12px; }
+
+/* Window opacity is a surface setting. The contents of a window (grid rows, headers, panels) must not paint
+   over it, or the wallpaper and the window fade would not show. Text and borders stay solid. */
+.wm-window > * { background: transparent; }
+/* The focus dot is a direct child too. Its background must win over the rule above. */
+.wm-window > .wm-focus-dot { background: var(--haya-active); }
+.wm-window .haya-grid, .wm-window .haya-grid-bar, .wm-window .haya-head,
+.wm-window .haya-status, .wm-window .haya-gutter, .wm-window .haya-cell { background: transparent; }
+.wm-window .haya-line:not(.is-alt):not(.is-selected) { background: transparent; }
+
+/* xterm writes its theme background as inline styles on its own wrappers. For a translucent window those
+   wrappers must be transparent too, or they paint over the window and the wallpaper. */
+.wm-window .xterm,
+.wm-window .xterm .xterm-viewport,
+.wm-window .xterm .xterm-screen,
+.wm-window .xterm .xterm-screen canvas { background-color: transparent !important; background: transparent !important; }
+
+/* Glass: a translucent window blurs what is behind it. Blur is one global setting, --blur in px. */
+.wm-window {
+  backdrop-filter: blur(var(--blur, 0px)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur, 0px)) saturate(160%);
+}
+
+
+/* Bottom bar: workspace chips never shrink, so they cannot be pushed out of the window. The status text is what gives way. */
+.haya-ws-picker, .haya-ws-label, .haya-ws-label .haya-btn { flex-shrink: 0; }
+.haya-bar-bottom { overflow: hidden; }
+
+/* Layout dropdown: opens after the pointer rests on the grid icon */
+.haya-layout { position: relative; display: inline-flex; }
+.haya-layout-list { position: absolute; z-index: 90; top: calc(100% + 6px); right: 0; min-width: 140px; padding: 4px; border: 1px solid var(--line2); border-radius: 10px; background: var(--popup); box-shadow: 0 12px 32px #0006; }
+.haya-layout-item { display: flex; align-items: center; gap: 8px; width: 100%; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
+.haya-layout-item:hover { background: var(--hover); color: var(--text); }
+.haya-layout-item.is-on { color: var(--text); }
+
+/* Empty bar: keeps the frame gap where a hidden toolbar was. */
+.haya-empty-left, .haya-empty-right { flex: none; width: var(--haya-bar-pad); }
+.haya-empty-top, .haya-empty-bottom { flex: none; height: var(--haya-bar-pad); width: 100%; }
+
+/* Custom workspace names in Preferences */
+.haya-prefs-names { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding-bottom: 10px; }
+.haya-prefs-name { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 6px; color: var(--quiet); font-size: 11px; }
+
+/* Row form (edit and add) and panel header actions */
+.haya-panel-actions { display: inline-flex; align-items: center; gap: 2px; }
+.haya-form-fields { display: flex; flex-direction: column; gap: 8px; }
+.haya-form-field { display: flex; flex-direction: column; gap: 4px; }
+.haya-field-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.haya-field-input:disabled { opacity: .6; }
+.haya-form-confirm { color: var(--muted); font-size: 11px; align-self: center; }
+
+.haya-prefs-checks { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-bottom: 8px; }
+.haya-prefs-check { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; padding: 4px 0 8px; }
+
+/* Whole-window wallpaper: the frame bands and stage turn clear so the picture reads through.
+   A scrim tinted with the theme's own --bg sits over the photo, so text keeps its contrast in both light and dark. */
+.app.has-app-wallpaper { background-size: cover; background-position: center; background-repeat: no-repeat; }
+.app.has-app-wallpaper .haya-chrome, .app.has-app-wallpaper .haya-titlebar, .app.has-app-wallpaper .haya-bar-bottom,
+.app.has-app-wallpaper .haya-edge { background: transparent; }
+.app.has-app-wallpaper .haya-stage { background: transparent; }
+.app.has-app-wallpaper .haya-body,
+.app.has-app-wallpaper .wm-area,
+.app.has-app-wallpaper .haya-main,
+.app.has-app-wallpaper .haya-slot { background: transparent; }
+
+.app.has-app-wallpaper { background-image: none; isolation: isolate; }
+.app.has-app-wallpaper::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1;
+  background-image: var(--wp-url);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  filter: blur(var(--wp-blur, 12px));
+  transform: scale(1.04);
+}
+.app.has-app-wallpaper::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1;
+  background: color-mix(in srgb, var(--bg) 38%, transparent);
+}
+/* Toolbar buttons and tabs carry a light tint of the theme colour, so controls read on either theme. */
+/* Expanded wallpaper: resting controls stay clear, like every other mode. Only hover and active get a tint,
+   taken from the theme colour so both themes keep contrast. */
+.app.has-app-wallpaper {
+  --haya-state-hover: color-mix(in srgb, var(--bg) 50%, transparent);
+  --haya-state-active: color-mix(in srgb, var(--selected) 90%, transparent);
+  /* Resting text is brighter over a photo, so the labels stay readable. */
+  --haya-state-fg: var(--muted);
+}
+.app.has-app-wallpaper .haya-stage { border-color: color-mix(in srgb, var(--line) 30%, transparent); }
+
+/* Window glass, set from Preferences > Window. Zero on every value means a flat window. */
+.wm-window {
+  /* Every layer scales with the Preferences values, so 0 means a flat window with no glass. */
+  background-image: linear-gradient(135deg,
+    rgba(255, 255, 255, var(--glass-sheen-strength, 0)) 0%,
+    rgba(255, 255, 255, calc(var(--glass-sheen-strength, 0) * 0.15)) 38%, rgba(255, 255, 255, 0) 58%,
+    rgba(255, 255, 255, calc(var(--glass-sheen-strength, 0) * 0.3)) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, var(--glass-highlight, 0)),
+    inset 1px 0 0 rgba(255, 255, 255, calc(var(--glass-highlight, 0) * 0.4)),
+    inset 0 -1px 0 rgba(255, 255, 255, calc(var(--glass-highlight, 0) * 0.4)),
+    inset -1px 0 0 rgba(255, 255, 255, calc(var(--glass-highlight, 0) * 0.4)),
+    inset 0 0 0 1px rgba(255, 255, 255, calc(var(--glass-highlight, 0) * 0.5));
+  backdrop-filter: blur(var(--blur, 0px)) saturate(var(--glass-saturation, 100%)) brightness(var(--glass-brightness, 1));
+  -webkit-backdrop-filter: blur(var(--blur, 0px)) saturate(var(--glass-saturation, 100%)) brightness(var(--glass-brightness, 1));
+}
+

@@ -11,10 +11,11 @@
     elapsed_ms: number;
   };
 
-  let { schema, table, onselect }: { schema: string; table: string; onselect?: (columns: string[], row: (string | null)[]) => void } = $props();
+  let { schema, table, zoom = 12, onselect }: { schema: string; table: string; zoom?: number; onselect?: (columns: string[], row: (string | null)[]) => void } = $props();
 
   const PAGE = 200;
-  const ROW_H = 26;
+  // Row height scales with the font, so zoomed text is never cut off.
+  const ROW_H = $derived(Math.round(zoom * 2.2));
   const HEADER_H = 28;
   const GUTTER = 56;
   const CHAR_W = 7.4;
@@ -59,7 +60,7 @@
   onMount(() => load(0));
 </script>
 
-<div class="haya-grid">
+<div class="haya-grid" style="font-size: {zoom}px">
   <div class="haya-grid-bar">
     {#if error}<span class="is-error">{error}</span>
     {:else if result}

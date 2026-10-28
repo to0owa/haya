@@ -8,4 +8,5 @@ publish.workspace = true
 
 [dependencies]
 portable-pty = "0.9"
+libc = "0.2"
 anyhow = "1"

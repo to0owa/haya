@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Haya",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.1",
   "identifier": "dev.haya.terminal",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -13,12 +13,14 @@
     "windows": [
       {
         "title": "Haya",
+        "create": false,
         "width": 1280,
         "height": 800,
         "minWidth": 800,
         "minHeight": 560,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
+        "dragDropEnabled": false,
         "trafficLightPosition": {
           "x": 14,
           "y": 19
@@ -26,18 +28,36 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$HOME/Library/Application Support/Haya/wallpapers/**"
+        ]
+      }
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "app",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIyOTg3MDczQTBDNzk3NTcKUldSWGw4ZWdjM0NZc2liZVdmZWljTFA4STloNWIvcnNkWkFYajZQRFArcksxY0JaYU9nMXdlWmkK",
+      "endpoints": [
+        "https://github.com/to0owa/haya/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

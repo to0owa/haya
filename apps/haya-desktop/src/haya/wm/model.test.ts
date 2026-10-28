@@ -158,3 +158,67 @@ describe("toolbar layout", () => {
     expect(createDefaultConfig().barLayout).toEqual({});
   });
 });
+
+describe("wallpaper and window opacity", () => {
+  test("keeps only plain image file names as wallpapers", () => {
+    const config = normalize({
+      version: 1,
+      workspaces: [
+        { id: 1, wallpaper: "3f9a1c2b.png" },
+        { id: 2, wallpaper: "../../etc/passwd" },
+        { id: 3, wallpaper: "abc.exe" },
+      ],
+    });
+    expect(config.workspaces[0].wallpaper).toBe("3f9a1c2b.png");
+    expect(config.workspaces[1].wallpaper).toBeNull();
+    expect(config.workspaces[2].wallpaper).toBeNull();
+  });
+
+  test("clamps the window opacity between 0.3 and 1 and falls back to 1", () => {
+    const window = (v: unknown) => normalize({ version: 1, workspaces: [], glass: { window: { opacity: v } } }).glass.window.opacity;
+    expect(window(0.1)).toBe(0.3);
+    expect(window(2)).toBe(1);
+    expect(window("x")).toBe(1);
+  });
+});
+
+describe("glass per surface", () => {
+  const FLAT = { opacity: 1, blur: 0, highlight: 0, sheen: 0, saturation: 100 };
+
+  test("every surface defaults to a flat look", () => {
+    expect(createDefaultConfig().glass).toEqual({ window: FLAT, prefs: FLAT });
+    expect(normalize({ version: 1, workspaces: [] }).glass).toEqual({ window: FLAT, prefs: FLAT });
+  });
+
+  test("keeps each surface's own values", () => {
+    const saved = {
+      version: 1,
+      workspaces: [],
+      glass: {
+        window: { opacity: 0.45, blur: 2, highlight: 0.1, sheen: 0.15, saturation: 135 },
+        prefs: { opacity: 0.6, blur: 40, highlight: 0.5, sheen: 0.5, saturation: 200 },
+      },
+    };
+    expect(normalize(saved).glass).toEqual(saved.glass);
+  });
+
+  test("clamps each value to its range", () => {
+    const g = normalize({ version: 1, workspaces: [], glass: { prefs: { blur: 90, highlight: -1, saturation: 500 } } }).glass.prefs;
+    expect(g.blur).toBe(40);
+    expect(g.highlight).toBe(0);
+    expect(g.saturation).toBe(200);
+  });
+
+  test("moves a legacy top-level window look to the window surface", () => {
+    const legacy = { version: 1, workspaces: [], windowOpacity: 0.45, windowBlur: 2, glass: { highlight: 0.1, sheen: 0.15, saturation: 135 } };
+    expect(normalize(legacy).glass).toEqual({
+      window: { opacity: 0.45, blur: 2, highlight: 0.1, sheen: 0.15, saturation: 135 },
+      prefs: FLAT,
+    });
+  });
+
+  test("moves the untouched old glass defaults to flat in the legacy shape", () => {
+    const old = { version: 1, workspaces: [], glass: { highlight: 0.85, sheen: 0.34, saturation: 180 } };
+    expect(normalize(old).glass.window).toEqual(FLAT);
+  });
+});

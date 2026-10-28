@@ -2,6 +2,11 @@
   import type { Snippet } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import TrafficLightArea from "./TrafficLightArea.svelte";
+  import { activeWorkspace } from "../wm/model";
+  import { wm } from "../wm/store.svelte";
+  import { wallpaperUrl } from "../wm/wallpaper.svelte";
+  // The whole-window wallpaper sits under every band; bands turn translucent so it shows through.
+  const appUrl = $derived(wm.config.wallpaperWholeApp ? wallpaperUrl(activeWorkspace(wm.config).wallpaper) : null);
 
   // The window frame: titlebar on top, body (edges, panels, stage) in the middle, status bar at the bottom.
   let { titlebar, leftEdge, leftPanel, stage, rightPanel, rightEdge, bottom }: {
@@ -17,7 +22,7 @@
   }
 </script>
 
-<div class="app">
+<div class="app" class:has-app-wallpaper={appUrl !== null} style={appUrl ? `--wp-url:url("${appUrl}");--wp-blur:${wm.config.wallpaperBlur}px` : undefined}>
   <div class="haya-titlebar" onmousedown={onTitlebarDown} role="presentation">
     <TrafficLightArea />
     {@render titlebar()}

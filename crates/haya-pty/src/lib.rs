@@ -4,16 +4,18 @@ use std::{
     io::{Read, Write},
     sync::mpsc::{self, Receiver},
     thread,
+    time::Duration,
 };
 
 use anyhow::{Context as _, Result};
-use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
+use portable_pty::{Child, CommandBuilder, MasterPty, PtySize, native_pty_system};
 
 /// A running shell attached to a pseudo-terminal.
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
     output: Receiver<Vec<u8>>,
+    child: Box<dyn Child + Send + Sync>,
 }
 
 impl PtySession {
@@ -31,7 +33,7 @@ impl PtySession {
                 command.env_remove(&key);
             }
         }
-        let mut child = pair.slave.spawn_command(command).context("spawn shell failed")?;
+        let child = pair.slave.spawn_command(command).context("spawn shell failed")?;
         // The child owns the slave end now; dropping ours lets reads see EOF on exit.
         drop(pair.slave);
 
@@ -53,11 +55,15 @@ impl PtySession {
                         }
                     }
                 }
-                let _ = child.wait();
             })
             .context("spawn reader thread failed")?;
 
-        Ok(Self { master: pair.master, writer, output })
+        Ok(Self { master: pair.master, writer, output, child })
+    }
+
+    /// Process id of the shell, if the platform reports one.
+    pub fn pid(&self) -> Option<u32> {
+        self.child.process_id()
     }
 
     /// Writes raw bytes (keystrokes, paste) to the shell.
@@ -76,5 +82,25 @@ impl PtySession {
     /// Returns every chunk of output received since the last call, without blocking.
     pub fn drain_output(&self) -> Vec<Vec<u8>> {
         self.output.try_iter().collect()
+    }
+}
+
+/// Ends the shell when the session goes away. The reader thread cannot do this: it holds a dup of the
+/// master, so the master never reaches EOF while the shell lives. Hang up first, then force the kill.
+impl Drop for PtySession {
+    fn drop(&mut self) {
+        eprintln!("[pty-debug] drop pid={:?}", self.child.process_id());
+        let _ = self.child.kill();
+        for _ in 0..20 {
+            if matches!(self.child.try_wait(), Ok(Some(_))) {
+                return;
+            }
+            thread::sleep(Duration::from_millis(50));
+        }
+        if let Some(pid) = self.child.process_id() {
+            // SAFETY: plain signal to a child we spawned and have not reaped yet.
+            unsafe { libc::kill(pid as libc::pid_t, libc::SIGKILL) };
+        }
+        let _ = self.child.wait();
     }
 }

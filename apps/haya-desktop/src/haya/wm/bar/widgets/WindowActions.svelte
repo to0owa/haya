@@ -1,22 +1,53 @@
 <script lang="ts">
-  import { activeWorkspace, type WindowKind } from "../../model";
-  import { close, open, wm } from "../../store.svelte";
+  import { open, widgetList, wm } from "../../store.svelte";
+  import { ADD_ITEMS } from "../add-items";
   import Button from "../../../components/Button.svelte";
+  import Icon from "../../../components/Icon.svelte";
 
-  // Actions depend on the focused window. Only actions that exist are shown.
-  const focused = $derived(activeWorkspace(wm.config).focus);
-  const kind = $derived<WindowKind | null>(focused === null ? null : wm.config.windows[focused] ?? null);
-
-  const actions = $derived.by(() => {
-    const list: { label: string; run: () => void }[] = [{ label: "+ Terminal", run: () => open("terminal") }];
-    if (focused !== null) list.push({ label: "Close", run: () => close(focused) });
-    if (kind === "table") list.push({ label: "Connections", run: () => open("connections") });
-    return list;
+  // Items chosen in Preferences > Toolbar. Never empty: with nothing chosen, the first item stays.
+  const items = $derived.by(() => {
+    const chosen = widgetList("actions", "items", "terminal");
+    const list = ADD_ITEMS.filter((item) => chosen.includes(item.kind));
+    return list.length ? list : [ADD_ITEMS[0]];
   });
+
+  let menuOpen = $state(false);
+  let root: HTMLDivElement | undefined = $state();
+
+  function onClick() {
+    if (items.length === 1) return pick(items[0].kind);
+    menuOpen = !menuOpen;
+  }
+
+  function pick(kind: (typeof ADD_ITEMS)[number]["kind"]) {
+    open(kind);
+    menuOpen = false;
+  }
+
+  function onWindowDown(event: PointerEvent) {
+    if (menuOpen && root && !root.contains(event.target as Node)) menuOpen = false;
+  }
+
+  function onKey(event: KeyboardEvent) {
+    if (menuOpen && event.key === "Escape") menuOpen = false;
+  }
 </script>
 
-<div class="haya-bar-actions">
-  {#each actions as action (action.label)}
-    <Button label={action.label} onclick={action.run}>{action.label}</Button>
-  {/each}
+<svelte:window onpointerdown={onWindowDown} onkeydown={onKey} />
+
+<div class="haya-layout" bind:this={root}>
+  <Button variant="icon" label={items.length === 1 ? `Add ${items[0].label.toLowerCase()}` : "Add"} onclick={onClick}>
+    <Icon name="terminal" />
+  </Button>
+  {#if menuOpen && items.length > 1}
+    <div class="haya-layout-list" role="listbox" aria-label="Add">
+      {#each items as item (item.kind)}
+        <button class="haya-layout-item" role="option" aria-selected="false" onclick={() => pick(item.kind)}>
+          <span class="haya-menu-check"></span>
+          <Icon name={item.icon} />
+          <span>{item.label}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
 </div>

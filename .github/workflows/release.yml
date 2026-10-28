@@ -1,0 +1,59 @@
+# Builds Haya for macOS and publishes a GitHub release with the signed update feed (latest.json).
+# Release by pushing a tag that matches the app version, e.g. git tag v0.1.0-rc.1 && git push origin v0.1.0-rc.1
+# Tags with a "-" (rc, beta) become GitHub pre-releases. latest.json only serves the newest non-prerelease, so RC builds never auto-update installed apps.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Check the tag matches the app version
+        run: |
+          version=$(jq -r .version apps/haya-desktop/src-tauri/tauri.conf.json)
+          if [ "v$version" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match tauri.conf.json version $version"
+            exit 1
+          fi
+
+      - name: Install frontend dependencies
+        working-directory: apps/haya-desktop
+        run: bun install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/haya-desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: Haya ${{ github.ref_name }}
+          releaseBody: See the assets to download this version.
+          releaseDraft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          args: --target ${{ matrix.target }}

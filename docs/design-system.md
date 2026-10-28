@@ -8,6 +8,8 @@ Source of tokens: `src/mestero/app.css` (Mestero). Haya-specific tokens live in 
 | `--haya-frame` (= `--chrome`) | `#1E2020` | titlebar, side gutters, status bar, app background |
 | `--haya-stage` (= `--panel`) | `#111818` | the workspace stage (rounded inset panel) |
 | `--haya-window` (= `--raised`) | `#151d1c` | each window inside the stage |
+| `--inset` | per theme (`#ffffff` light, `#23282e` dark) | a panel, field, or keycap inside a `--soft` card: the wallpaper panel and its tab, shortcut keys. Set by each theme in `theme/themes.ts`; CSS never branches on the mode |
+| `--glass-brightness` | per theme (`1` light, `0.62` dark) | multiplier on the picture behind a glass surface (tile windows, Preferences), so translucent dark surfaces are not washed out by a bright wallpaper |
 
 ## Rules
 1. **One frame color.** Everything outside the workspace (titlebar, gutters, status bar) uses `--haya-frame`.

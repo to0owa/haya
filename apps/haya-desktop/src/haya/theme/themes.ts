@@ -37,6 +37,8 @@ export const HAYA_DARK: Theme = {
     "--hover": "#242a31",
     "--selected": "#2b333b",
     "--soft": "#171b1f",
+    "--inset": "#23282e",
+    "--glass-brightness": "0.62",
     "--popup": "#1c2024",
     "--control": "#14171a",
     "--topbar": "#181a1c",
@@ -73,6 +75,8 @@ export const HAYA_LIGHT: Theme = {
     "--hover": "#e7eaee",
     "--selected": "#dde2e8",
     "--soft": "#f0f2f5",
+    "--inset": "#ffffff",
+    "--glass-brightness": "1",
     "--popup": "#fdfdfe",
     "--control": "#ffffff",
     "--topbar": "#f3f4f6",
@@ -82,6 +86,13 @@ export const HAYA_LIGHT: Theme = {
     "--terminal-selection": "#dde2e8",
   },
 };
+
+// --inset is the surface that sits inside a --soft card: a panel, a field, a keycap. It must read as lifted off the card
+// in every theme, so each theme sets its own value. Light goes up to white, dark goes up one step. CSS uses the token
+// and never branches on the mode, so a new theme only has to supply this one value.
+//
+// --glass-brightness is how much of the picture behind a glass surface (a window, Preferences) comes through, as a
+// multiplier. Dark themes dim it, so a translucent dark surface over a bright wallpaper stays dark. Light themes leave it at 1.
 
 /** Listed in this order inside each mode group. The first theme of a mode is its default. */
 export const THEMES: Theme[] = [HAYA_DARK, HAYA_LIGHT];

@@ -1,16 +1,19 @@
 <script lang="ts">
   import { WORKSPACE_COUNT } from "../../model";
   import { switchWorkspace, widgetSetting, wm } from "../../store.svelte";
+  import { toNumbering, workspaceLabel } from "../../numbering";
   import Button from "../../../components/Button.svelte";
 
   const ids = Array.from({ length: WORKSPACE_COUNT }, (_, i) => i + 1);
   const mode = $derived(widgetSetting("workspaces", "mode", "all"));
   const shown = $derived(mode === "active" ? ids.filter((id) => id === wm.config.active) : ids);
+  const numbering = $derived(toNumbering(widgetSetting("workspaces", "numbering", "arabic")));
+  const labelOf = (id: number) => workspaceLabel(id, numbering, wm.config.workspaces[id - 1]?.name ?? "");
 </script>
 
 {#snippet chip(id: number)}
   <Button variant="chip" label={`Workspace ${id} (⌘${id === 10 ? 0 : id})`} active={wm.config.active === id} onclick={() => switchWorkspace(id)}>
-    {id === 10 ? 0 : id}
+    {labelOf(id)}
   </Button>
 {/snippet}
 

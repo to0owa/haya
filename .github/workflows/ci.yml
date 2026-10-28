@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+      - name: Frontend
+        working-directory: apps/haya-desktop
+        run: |
+          bun install --frozen-lockfile
+          bun run check
+          bun test
+      - name: Rust
+        run: cargo test --workspace
